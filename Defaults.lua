@@ -6,7 +6,9 @@ local defaults = {
     posX = 0,
     posY = 0,
     collapsed = {},      -- [categoryKey] = true when section is collapsed
-    customRules = {},    -- v1.1 — name pattern -> category key
+    customRules = {},    -- name pattern -> category key (panel UI, v1.1)
+    itemOverrides = {},  -- [itemID] = categoryKey | "hidden" (Alt-click menu)
+    showHidden = false,  -- reveal the "hidden" section
 }
 
 function BagsEnh_DeepCopy(t)

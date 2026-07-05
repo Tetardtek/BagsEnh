@@ -17,6 +17,45 @@ local headerPool = {}
 local activeHeaders = {}
 
 -- ============================================================
+-- Alt-click item menu — move to category / hide / reset
+-- ============================================================
+local menuFrame
+local function ShowItemMenu(btn)
+    local bag, slot = btn:GetParent():GetID(), btn:GetID()
+    local link = GetContainerItemLink(bag, slot)
+    local itemID = BagsEnh_ItemIDFromLink(link)
+    if not itemID then return end
+    local ld = BagsEnh_L()
+    local overrides = BagsEnhDB.itemOverrides or {}
+
+    menuFrame = menuFrame or CreateFrame("Frame", "BagsEnhItemMenu", UIParent, "UIDropDownMenuTemplate")
+    local name = GetItemInfo(link)
+    local menu = {
+        { text = name or "?", isTitle = true, notCheckable = true },
+    }
+    for _, cat in ipairs(BagsEnh_CATEGORY_ORDER) do
+        if cat ~= "new" and cat ~= "hidden" then
+            menu[#menu + 1] = {
+                text = ld.MENU_MOVE_TO:format(ld[BagsEnh_CATEGORY_LABELS[cat]] or cat),
+                checked = (overrides[itemID] == cat),
+                func = function() BagsEnh_SetItemOverride(itemID, cat) end,
+            }
+        end
+    end
+    menu[#menu + 1] = {
+        text = ld.MENU_HIDE,
+        checked = (overrides[itemID] == "hidden"),
+        func = function() BagsEnh_SetItemOverride(itemID, "hidden") end,
+    }
+    menu[#menu + 1] = {
+        text = ld.MENU_RESET,
+        notCheckable = true,
+        func = function() BagsEnh_SetItemOverride(itemID, nil) end,
+    }
+    EasyMenu(menu, menuFrame, "cursor", 0, 0, "MENU")
+end
+
+-- ============================================================
 -- Pools
 -- ============================================================
 local buttonCounter = 0
@@ -31,6 +70,24 @@ local function AcquireButton(bag)
             icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
         end
         btn.beBorder = BagsEnh_CreateIconBorder(btn, icon or btn)
+
+        -- Alt+left-click opens the category menu, everything else is native
+        local origClick = btn:GetScript("OnClick")
+        btn:SetScript("OnClick", function(self, button, ...)
+            if button == "LeftButton" and IsAltKeyDown() then
+                ShowItemMenu(self)
+                return
+            end
+            if origClick then origClick(self, button, ...) end
+        end)
+
+        -- Discoverability: append the Alt-click hint to the native tooltip
+        btn:HookScript("OnEnter", function()
+            if GameTooltip:IsShown() then
+                GameTooltip:AddLine(BagsEnh_L().TIP_ALT_CLICK, 0.4, 0.75, 1)
+                GameTooltip:Show()
+            end
+        end)
     else
         btn:SetParent(bagParents[bag])
     end
@@ -107,11 +164,20 @@ function BagsEnh_CreateMainFrame()
     local close = CreateFrame("Button", nil, mainFrame, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", -2, -2)
 
-    -- Footer: slots + money
+    -- Footer: slots + money + hidden toggle
     mainFrame.slots = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     mainFrame.slots:SetPoint("BOTTOMLEFT", PADDING, PADDING - 2)
     mainFrame.money = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     mainFrame.money:SetPoint("BOTTOMRIGHT", -PADDING, PADDING - 2)
+
+    mainFrame.hiddenBtn = CreateFrame("Button", nil, mainFrame, "UIPanelButtonTemplate")
+    mainFrame.hiddenBtn:SetSize(130, 18)
+    mainFrame.hiddenBtn:SetPoint("BOTTOM", 0, 5)
+    mainFrame.hiddenBtn:SetScript("OnClick", function()
+        BagsEnhDB.showHidden = not BagsEnhDB.showHidden
+        BagsEnh_Refresh()
+    end)
+    mainFrame.hiddenBtn:Hide()
 
     -- Content area (sections are laid out inside)
     mainFrame.content = CreateFrame("Frame", nil, mainFrame)
@@ -206,6 +272,9 @@ function BagsEnh_Refresh()
 
     for _, cat in ipairs(BagsEnh_CATEGORY_ORDER) do
         local items = groups[cat]
+        if cat == "hidden" and not BagsEnhDB.showHidden then
+            items = nil
+        end
         if items and #items > 0 then
             local header = AcquireHeader()
             header:ClearAllPoints()
@@ -258,6 +327,17 @@ function BagsEnh_Refresh()
 
     mainFrame.slots:SetText(ld.SLOTS:format(usedSlots, totalSlots))
     mainFrame.money:SetText(BagsEnh_FormatGold(GetMoney()))
+
+    -- Hidden items toggle (footer, only when relevant)
+    local hiddenCount = groups.hidden and #groups.hidden or 0
+    if hiddenCount > 0 or BagsEnhDB.showHidden then
+        mainFrame.hiddenBtn:SetText(BagsEnhDB.showHidden
+            and ld.BTN_HIDE_HIDDEN
+            or ld.BTN_SHOW_HIDDEN:format(hiddenCount))
+        mainFrame.hiddenBtn:Show()
+    else
+        mainFrame.hiddenBtn:Hide()
+    end
 
     -- Some items weren't in the client cache yet: retry a few times
     if unresolved then

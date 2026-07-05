@@ -18,6 +18,7 @@ BagsEnh_CATEGORY_ORDER = {
     "quest",
     "junk",
     "misc",
+    "hidden",       -- rendered only when BagsEnhDB.showHidden
 }
 
 BagsEnh_CATEGORY_LABELS = {
@@ -32,6 +33,7 @@ BagsEnh_CATEGORY_LABELS = {
     quest = "CAT_QUEST",
     junk = "CAT_JUNK",
     misc = "CAT_MISC",
+    hidden = "CAT_HIDDEN",
 }
 
 -- ============================================================
@@ -110,6 +112,13 @@ BagsEnh_EQUIPLOC_ORDER = {
 function BagsEnh_Categorize(link)
     if not link then return "misc", true end
     local itemID = BagsEnh_ItemIDFromLink(link)
+
+    -- User override (Alt-click menu) — absolute priority, never cached
+    local override = itemID and BagsEnhDB.itemOverrides and BagsEnhDB.itemOverrides[itemID]
+    if override then
+        return override, true
+    end
+
     local cached = itemID and categoryCache[itemID]
     if cached then
         return cached[1], true, cached[2], cached[3]
@@ -155,6 +164,14 @@ function BagsEnh_Categorize(link)
         categoryCache[itemID] = {category, subCat, equipLoc}
     end
     return category, true, subCat, equipLoc
+end
+
+-- Sets (or clears with nil) a user category override for an item
+function BagsEnh_SetItemOverride(itemID, category)
+    if not itemID then return end
+    BagsEnhDB.itemOverrides = BagsEnhDB.itemOverrides or {}
+    BagsEnhDB.itemOverrides[itemID] = category
+    if BagsEnh_MarkDirty then BagsEnh_MarkDirty() end
 end
 
 -- Debug: dumps every bag item's raw GetItemInfo data + resolved category

@@ -18,6 +18,14 @@ BagsEnh_Locales = {
         CAT_QUEST = "Quest",
         CAT_JUNK = "Junk",
         CAT_MISC = "Miscellaneous",
+        CAT_HIDDEN = "Hidden",
+        -- Item menu (Alt-click)
+        MENU_MOVE_TO = "Move to: %s",
+        MENU_HIDE = "Hide this item",
+        MENU_RESET = "Automatic category (reset)",
+        TIP_ALT_CLICK = "Alt-Click: category / hide",
+        BTN_SHOW_HIDDEN = "Show hidden (%d)",
+        BTN_HIDE_HIDDEN = "Collapse hidden",
     },
     ["frFR"] = {
         TITLE = "BagsEnh",
@@ -38,6 +46,14 @@ BagsEnh_Locales = {
         CAT_QUEST = "Quête",
         CAT_JUNK = "Camelote",
         CAT_MISC = "Divers",
+        CAT_HIDDEN = "Masqués",
+        -- Item menu (Alt-click)
+        MENU_MOVE_TO = "Déplacer vers : %s",
+        MENU_HIDE = "Masquer cet objet",
+        MENU_RESET = "Catégorie automatique (réinitialiser)",
+        TIP_ALT_CLICK = "Alt-clic : catégorie / masquer",
+        BTN_SHOW_HIDDEN = "Voir masqués (%d)",
+        BTN_HIDE_HIDDEN = "Replier les masqués",
     },
 }
 
