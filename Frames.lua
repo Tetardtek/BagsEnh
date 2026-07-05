@@ -83,6 +83,23 @@ local function AcquireButton(bag)
         end
         btn.beBorder = BagsEnh_CreateIconBorder(btn, icon or btn)
 
+        -- "New item" glow (inter-Enh bridge / autonomous detection)
+        local glow = btn:CreateTexture(nil, "OVERLAY")
+        glow:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
+        glow:SetBlendMode("ADD")
+        glow:SetPoint("CENTER", btn, "CENTER", 0, 0)
+        glow:SetVertexColor(1, 1, 0.5)
+        glow:Hide()
+        btn.beGlow = glow
+
+        -- Hovering a new item marks it seen (clears its glow, no full refresh)
+        btn:HookScript("OnEnter", function(self)
+            if self.beItemID and BagsEnh_newItems and BagsEnh_newItems[self.beItemID] then
+                BagsEnh_MarkSeen(self.beItemID)
+                self.beGlow:Hide()
+            end
+        end)
+
         -- The native OnClick is left untouched: replacing it taints the
         -- button and blocks protected item use on the Ascension client.
         -- The category menu lives on a separate corner badge that only
@@ -319,6 +336,10 @@ function BagsEnh_CreateMainFrame()
     end
 
     mainFrame:SetScript("OnShow", function() BagsEnh_Refresh() end)
+    -- Closing the bags = you've seen the new items; clear the glow
+    mainFrame:SetScript("OnHide", function()
+        if BagsEnh_newItems then BagsEnh_newItems = {} end
+    end)
 
     return mainFrame
 end
@@ -403,6 +424,16 @@ function BagsEnh_Refresh()
 
         SetItemButtonTexture(btn, item.texture)
         SetItemButtonCount(btn, item.count)
+
+        -- New-item glow
+        local itemID = BagsEnh_ItemIDFromLink(item.link)
+        btn.beItemID = itemID
+        if itemID and BagsEnh_newItems and BagsEnh_newItems[itemID] then
+            btn.beGlow:SetSize(iconSize * 1.5, iconSize * 1.5)
+            btn.beGlow:Show()
+        else
+            btn.beGlow:Hide()
+        end
 
         local qc = item.quality and item.quality > 1 and BagsEnh_QUALITY_COLORS[item.quality]
         if qc then
