@@ -1,0 +1,12 @@
+## Interface: 30300
+## Title: BagsEnh |cff00ccffv0.1|r
+## Notes: Unified bag view with smart categories. Enh series.
+## SavedVariables: BagsEnhDB
+
+Locales.lua
+Defaults.lua
+Utils.lua
+Categories.lua
+Frames.lua
+Hooks.lua
+Core.lua
