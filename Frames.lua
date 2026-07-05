@@ -179,7 +179,7 @@ function BagsEnh_CreateMainFrame()
     local ld = BagsEnh_L()
 
     mainFrame = CreateFrame("Frame", "BagsEnhFrame", UIParent)
-    mainFrame:SetSize(480, 420)
+    mainFrame:SetSize(BagsEnhDB.width or 400, BagsEnhDB.height or 480)
     mainFrame:SetPoint("CENTER", BagsEnhDB.posX or 0, BagsEnhDB.posY or 0)
     mainFrame:SetScale(BagsEnhDB.scale or 1.0)
     mainFrame:SetBackdrop({
@@ -189,6 +189,8 @@ function BagsEnh_CreateMainFrame()
     })
     mainFrame:SetBackdropColor(0, 0, 0, 0.85)
     mainFrame:SetMovable(true)
+    mainFrame:SetResizable(true)
+    if mainFrame.SetMinResize then mainFrame:SetMinResize(240, 200) end
     mainFrame:EnableMouse(true)
     mainFrame:RegisterForDrag("LeftButton")
     mainFrame:SetScript("OnDragStart", mainFrame.StartMoving)
@@ -279,6 +281,25 @@ function BagsEnh_CreateMainFrame()
     mainFrame.content:SetSize(400, 10)
     scroll:SetScrollChild(mainFrame.content)
 
+    -- Resize handle (bottom-right) — free window sizing, more width = more columns
+    local grip = CreateFrame("Button", nil, mainFrame)
+    grip:SetSize(16, 16)
+    grip:SetPoint("BOTTOMRIGHT", -4, 4)
+    grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    grip:SetScript("OnMouseDown", function() mainFrame:StartSizing("BOTTOMRIGHT") end)
+    grip:SetScript("OnMouseUp", function()
+        mainFrame:StopMovingOrSizing()
+        BagsEnhDB.width = mainFrame:GetWidth()
+        BagsEnhDB.height = mainFrame:GetHeight()
+        BagsEnh_Refresh()
+    end)
+    -- Live reflow while dragging the grip
+    mainFrame:SetScript("OnSizeChanged", function()
+        if mainFrame:IsShown() then BagsEnh_Refresh() end
+    end)
+
     -- Hidden per-bag parents: native item button behavior needs
     -- GetParent():GetID() == bag and button:GetID() == slot
     for _, bag in ipairs(BAGS) do
@@ -325,20 +346,34 @@ function BagsEnh_Refresh()
         end
     end
 
-    -- Render sections in canonical order
-    local columns = BagsEnhDB.columns or 12
+    -- Layout metrics
+    local perRow = BagsEnhDB.columns or 8          -- items per row inside a section
     local iconSize = BagsEnhDB.iconSize or 37
     local xStep = iconSize + 4
     local yStep = iconSize + 4
     local SUBHEADER_H = 15
-    local yOff = 0
-    local col = 0
+    local SECTION_GAP = 12
 
-    local function NewLine()
-        if col > 0 then
-            col = 0
-            yOff = yOff + yStep
+    -- Content width follows the viewport (window width minus chrome)
+    local viewW = mainFrame.scroll:GetWidth()
+    if not viewW or viewW < 1 then viewW = mainFrame:GetWidth() - PADDING * 2 end
+    mainFrame.content:SetWidth(viewW)
+
+    -- One "section column" is perRow icons wide. The number of columns
+    -- flows from the window width, so resizing wider = more columns.
+    local sectionW = perRow * xStep
+    local avail = viewW
+    if avail < sectionW then avail = sectionW end
+    local nbCols = math.max(1, math.floor((avail + SECTION_GAP) / (sectionW + SECTION_GAP)))
+
+    local colH = {}
+    for i = 1, nbCols do colH[i] = 0 end
+    local function ShortestCol()
+        local best = 1
+        for i = 2, nbCols do
+            if colH[i] < colH[best] then best = i end
         end
+        return best
     end
 
     local query = BagsEnh_searchText
@@ -349,12 +384,12 @@ function BagsEnh_Refresh()
         return name and name:lower():find(query, 1, true) ~= nil
     end
 
-    local function PlaceButton(item)
+    local function PlaceButton(item, x0, col, y)
         local btn = AcquireButton(item.bag)
         btn:SetID(item.slot)
         btn:SetSize(iconSize, iconSize)
         btn:ClearAllPoints()
-        btn:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", col * xStep, -yOff)
+        btn:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", x0 + col * xStep, -y)
 
         SetItemButtonTexture(btn, item.texture)
         SetItemButtonCount(btn, item.count)
@@ -367,21 +402,14 @@ function BagsEnh_Refresh()
             btn.beBorder:Hide()
         end
 
-        -- Search: dim non-matching items instead of removing them
-        -- (slots keep their place — easier to scan)
         local dim = not Matches(item)
         local icon = _G[btn:GetName() .. "IconTexture"]
         if icon then icon:SetDesaturated(dim) end
         btn:SetAlpha(dim and 0.25 or 1)
-
         btn:Show()
-        col = col + 1
-        if col >= columns then
-            col = 0
-            yOff = yOff + yStep
-        end
     end
 
+    -- Render each section into the currently shortest column (balanced flow)
     for _, cat in ipairs(BagsEnh_CATEGORY_ORDER) do
         local items = groups[cat]
         if cat == "hidden" and not BagsEnhDB.showHidden then
@@ -389,22 +417,21 @@ function BagsEnh_Refresh()
         end
         if items and #items > 0 then
             local collapsed = BagsEnhDB.collapsed and BagsEnhDB.collapsed[cat]
+            local colIdx = ShortestCol()
+            local x0 = (colIdx - 1) * (sectionW + SECTION_GAP)
+            local y = colH[colIdx]
 
             local header = AcquireCatHeader(cat)
             header:ClearAllPoints()
-            header:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", 0, -yOff)
-            header:SetWidth(columns * xStep)
+            header:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", x0, -y)
+            header:SetWidth(sectionW)
             header.arrow:SetText(collapsed and "|cffffd100>|r" or "|cffffd100v|r")
             header.label:SetText(("|cffffd100%s|r |cff888888(%d)|r"):format(ld[BagsEnh_CATEGORY_LABELS[cat]] or cat, #items))
-            yOff = yOff + HEADER_H
+            y = y + HEADER_H
 
             if collapsed then
-                -- Section folded: header only, skip all items
-                -- (spacing handled by the shared trailer below)
+                -- header only
             elseif cat == "equipment" or cat == "profession" then
-                -- Sub-categories from itemSubType:
-                --   equipment  → weapon type / armor material (sorted by slot)
-                --   profession → Leather / Cloth / Herb / Cooking / ...
                 table.sort(items, function(a, b)
                     local sa, sb = a.subCat or "?", b.subCat or "?"
                     if sa ~= sb then return sa < sb end
@@ -416,48 +443,48 @@ function BagsEnh_Refresh()
                     end
                     return (a.link or "") < (b.link or "")
                 end)
-
-                local lastSub
+                local lastSub, col = nil, 0
                 for _, item in ipairs(items) do
                     local sub = item.subCat or "?"
                     if sub ~= lastSub then
+                        if col > 0 then y = y + yStep; col = 0 end
                         lastSub = sub
-                        NewLine()
                         local sh = AcquireHeader()
                         sh:ClearAllPoints()
-                        sh:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", 4, -yOff)
+                        sh:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", x0 + 4, -y)
                         sh:SetText("|cffaaaaaa" .. sub .. "|r")
-                        yOff = yOff + SUBHEADER_H
+                        y = y + SUBHEADER_H
                     end
-                    PlaceButton(item)
+                    PlaceButton(item, x0, col, y)
+                    col = col + 1
+                    if col >= perRow then col = 0; y = y + yStep end
                 end
+                if col > 0 then y = y + yStep end
             else
+                local col = 0
                 for _, item in ipairs(items) do
-                    PlaceButton(item)
+                    PlaceButton(item, x0, col, y)
+                    col = col + 1
+                    if col >= perRow then col = 0; y = y + yStep end
                 end
+                if col > 0 then y = y + yStep end
             end
 
-            NewLine()
-            yOff = yOff + 6
+            colH[colIdx] = y + SECTION_GAP
         end
     end
 
-    -- The content frame holds the full (possibly tall) layout
-    local contentW = columns * xStep
-    mainFrame.content:SetSize(contentW, math.max(yOff, 10))
+    -- Tallest column drives the scrollable content height
+    local totalH = 0
+    for i = 1, nbCols do
+        if colH[i] > totalH then totalH = colH[i] end
+    end
+    mainFrame.content:SetHeight(math.max(totalH, 10))
 
-    -- Fit window to content, capped at 90% screen — beyond that the
-    -- viewport scrolls (mouse wheel) instead of the window overflowing.
+    -- Window size is user-controlled (resize handle); content scrolls inside
     local chromeTop, chromeBottom = 30, 26
-    local maxH = UIParent:GetHeight() * 0.9
-    local wanted = chromeTop + yOff + chromeBottom
-    local winH = math.max(200, math.min(wanted, maxH))
-    mainFrame:SetHeight(winH)
-    mainFrame:SetWidth(PADDING * 2 + contentW + 4)
-
-    -- Update scroll range and clamp current offset
-    local viewH = winH - chromeTop - chromeBottom
-    local maxScroll = math.max(0, yOff - viewH)
+    local viewH = mainFrame:GetHeight() - chromeTop - chromeBottom
+    local maxScroll = math.max(0, totalH - viewH)
     mainFrame.scroll.maxScroll = maxScroll
     if mainFrame.scroll:GetVerticalScroll() > maxScroll then
         mainFrame.scroll:SetVerticalScroll(maxScroll)

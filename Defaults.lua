@@ -2,8 +2,10 @@ local defaults = {
     lang = "enUS",
     enabled = true,      -- unified view replaces default bags
     scale = 1.0,
-    columns = 12,
+    columns = 7,          -- items per row inside a section
     iconSize = 37,
+    width = 620,          -- window size (resizable) — ~2 section columns
+    height = 480,
     posX = 0,
     posY = 0,
     collapsed = {},      -- [categoryKey] = true when section is collapsed

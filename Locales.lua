@@ -34,7 +34,7 @@ BagsEnh_Locales = {
         -- Options panel
         OPT_UNIFIED = "Unified bag view (replace default bags)",
         OPT_SCALE = "Window Scale",
-        OPT_COLUMNS = "Columns",
+        OPT_COLUMNS = "Items per row",
         OPT_ICON_SIZE = "Icon Size",
         OPT_RESET_POS = "Reset Window Position",
         PROF_SECTION = "Profiles",
@@ -95,7 +95,7 @@ BagsEnh_Locales = {
         -- Options panel
         OPT_UNIFIED = "Vue unifiée (remplace les sacs par défaut)",
         OPT_SCALE = "Échelle de la fenêtre",
-        OPT_COLUMNS = "Colonnes",
+        OPT_COLUMNS = "Objets par ligne",
         OPT_ICON_SIZE = "Taille des icônes",
         OPT_RESET_POS = "Réinitialiser la position",
         PROF_SECTION = "Profils",
