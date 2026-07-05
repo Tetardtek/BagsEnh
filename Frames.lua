@@ -13,8 +13,10 @@ local mainFrame
 local bagParents = {}      -- [bag] = hidden parent frame carrying the bag ID
 local buttonPool = {}      -- released buttons
 local activeButtons = {}   -- buttons currently shown
-local headerPool = {}
+local headerPool = {}      -- sub-headers (font strings)
 local activeHeaders = {}
+local catHeaderPool = {}   -- category headers (clickable buttons)
+local activeCatHeaders = {}
 
 -- ============================================================
 -- Alt-click item menu — move to category / hide / reset
@@ -114,16 +116,40 @@ local function AcquireButton(bag)
     return btn
 end
 
-local function AcquireHeader(small)
+-- Sub-header (weapon type / material / profession line) — plain text
+local function AcquireHeader()
     local h = table.remove(headerPool)
     if not h then
-        h = mainFrame.content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        h = mainFrame.content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         h:SetJustifyH("LEFT")
     end
-    h:SetFontObject(small and "GameFontHighlightSmall" or "GameFontNormal")
     h:Show()
     activeHeaders[#activeHeaders + 1] = h
     return h
+end
+
+-- Category header — clickable button that toggles collapse for its category
+local function AcquireCatHeader(catKey)
+    local b = table.remove(catHeaderPool)
+    if not b then
+        b = CreateFrame("Button", nil, mainFrame.content)
+        b:SetHeight(HEADER_H)
+        b:RegisterForClicks("LeftButtonUp")
+        b.arrow = b:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        b.arrow:SetPoint("LEFT", 0, 0)
+        b.label = b:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        b.label:SetPoint("LEFT", 14, 0)
+        b.label:SetJustifyH("LEFT")
+        b:SetScript("OnClick", function(self)
+            BagsEnhDB.collapsed = BagsEnhDB.collapsed or {}
+            BagsEnhDB.collapsed[self.catKey] = not BagsEnhDB.collapsed[self.catKey]
+            BagsEnh_Refresh()
+        end)
+    end
+    b.catKey = catKey
+    b:Show()
+    activeCatHeaders[#activeCatHeaders + 1] = b
+    return b
 end
 
 local function ReleaseAll()
@@ -137,6 +163,11 @@ local function ReleaseAll()
         table.insert(headerPool, h)
     end
     activeHeaders = {}
+    for _, b in ipairs(activeCatHeaders) do
+        b:Hide()
+        table.insert(catHeaderPool, b)
+    end
+    activeCatHeaders = {}
 end
 
 -- ============================================================
@@ -341,13 +372,20 @@ function BagsEnh_Refresh()
             items = nil
         end
         if items and #items > 0 then
-            local header = AcquireHeader()
+            local collapsed = BagsEnhDB.collapsed and BagsEnhDB.collapsed[cat]
+
+            local header = AcquireCatHeader(cat)
             header:ClearAllPoints()
             header:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", 0, -yOff)
-            header:SetText(("|cffffd100%s|r |cff888888(%d)|r"):format(ld[BagsEnh_CATEGORY_LABELS[cat]] or cat, #items))
+            header:SetWidth(columns * xStep)
+            header.arrow:SetText(collapsed and "|cffffd100>|r" or "|cffffd100v|r")
+            header.label:SetText(("|cffffd100%s|r |cff888888(%d)|r"):format(ld[BagsEnh_CATEGORY_LABELS[cat]] or cat, #items))
             yOff = yOff + HEADER_H
 
-            if cat == "equipment" or cat == "profession" then
+            if collapsed then
+                -- Section folded: header only, skip all items
+                -- (spacing handled by the shared trailer below)
+            elseif cat == "equipment" or cat == "profession" then
                 -- Sub-categories from itemSubType:
                 --   equipment  → weapon type / armor material (sorted by slot)
                 --   profession → Leather / Cloth / Herb / Cooking / ...
@@ -369,7 +407,7 @@ function BagsEnh_Refresh()
                     if sub ~= lastSub then
                         lastSub = sub
                         NewLine()
-                        local sh = AcquireHeader(true)
+                        local sh = AcquireHeader()
                         sh:ClearAllPoints()
                         sh:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", 4, -yOff)
                         sh:SetText("|cffaaaaaa" .. sub .. "|r")
