@@ -12,5 +12,6 @@ Profiles.lua
 Frames.lua
 Panel_Options.lua
 Panel_Categories.lua
+Panel_Order.lua
 Hooks.lua
 Core.lua

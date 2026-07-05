@@ -420,7 +420,7 @@ function BagsEnh_Refresh()
     end
 
     -- Render each section into the currently shortest column (balanced flow)
-    for _, cat in ipairs(BagsEnh_CATEGORY_ORDER) do
+    for _, cat in ipairs(BagsEnh_GetCategoryOrder()) do
         local items = groups[cat]
         if cat == "hidden" and not BagsEnhDB.showHidden then
             items = nil

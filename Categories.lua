@@ -92,6 +92,62 @@ function BagsEnh_InvalidateCategoryCache()
     categoryCache = {}
 end
 
+-- "new" always leads, "hidden" always trails; everything between is user-orderable.
+local FIXED_FIRST = "new"
+local FIXED_LAST = "hidden"
+
+-- Returns the orderable categories in the user's order, validated against
+-- the built-in list (drops unknowns, appends any category added later so a
+-- new BagsEnh version never loses a section).
+function BagsEnh_GetOrderableCategories()
+    local default, valid = {}, {}
+    for _, c in ipairs(BagsEnh_CATEGORY_ORDER) do
+        if c ~= FIXED_FIRST and c ~= FIXED_LAST then
+            default[#default + 1] = c
+            valid[c] = true
+        end
+    end
+    local saved = BagsEnhDB and BagsEnhDB.categoryOrder
+    if not saved then return default end
+    local seen, result = {}, {}
+    for _, c in ipairs(saved) do
+        if valid[c] and not seen[c] then
+            result[#result + 1] = c
+            seen[c] = true
+        end
+    end
+    for _, c in ipairs(default) do
+        if not seen[c] then result[#result + 1] = c end
+    end
+    return result
+end
+
+-- Full render order: new + orderable + hidden
+function BagsEnh_GetCategoryOrder()
+    local list = { FIXED_FIRST }
+    for _, c in ipairs(BagsEnh_GetOrderableCategories()) do
+        list[#list + 1] = c
+    end
+    list[#list + 1] = FIXED_LAST
+    return list
+end
+
+-- Moves a category up (delta -1) or down (delta +1) in the user order
+function BagsEnh_MoveCategory(cat, delta)
+    local order = BagsEnh_GetOrderableCategories()
+    local idx
+    for i, c in ipairs(order) do
+        if c == cat then idx = i break end
+    end
+    if not idx then return end
+    local j = idx + delta
+    if j < 1 or j > #order then return end
+    order[idx], order[j] = order[j], order[idx]
+    BagsEnhDB.categoryOrder = order
+    if BagsEnh_MarkDirty then BagsEnh_MarkDirty() end
+    if BagsEnhFrame and BagsEnhFrame:IsShown() then BagsEnh_Refresh() end
+end
+
 -- Equipment slot display order (head → trinket, weapons last)
 BagsEnh_EQUIPLOC_ORDER = {
     INVTYPE_HEAD = 1, INVTYPE_NECK = 2, INVTYPE_SHOULDER = 3,

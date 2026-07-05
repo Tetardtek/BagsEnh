@@ -20,7 +20,7 @@ local state = {
 local function ItemSortKey(link)
     local cat, _, subCat, equipLoc = BagsEnh_Categorize(link)
     local catIdx = 99
-    for i, c in ipairs(BagsEnh_CATEGORY_ORDER) do
+    for i, c in ipairs(BagsEnh_GetCategoryOrder()) do
         if c == cat then catIdx = i break end
     end
     local name, _, quality = GetItemInfo(link)

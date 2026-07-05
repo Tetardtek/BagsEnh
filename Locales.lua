@@ -60,6 +60,10 @@ BagsEnh_Locales = {
         CAT_PATTERN = "Item name (or fragment):",
         CAT_ADD = "Add",
         CAT_NO_RULES = "No custom rule yet.",
+        -- Section order panel
+        ORDER_PANEL_TITLE = "Section Order",
+        ORDER_PANEL_HINT = "Reorder categories. New stays first, Hidden last.",
+        ORDER_RESET = "Reset order",
     },
     ["frFR"] = {
         TITLE = "BagsEnh",
@@ -122,6 +126,10 @@ BagsEnh_Locales = {
         CAT_PATTERN = "Nom d'objet (ou fragment) :",
         CAT_ADD = "Ajouter",
         CAT_NO_RULES = "Aucune règle perso.",
+        -- Section order panel
+        ORDER_PANEL_TITLE = "Ordre des sections",
+        ORDER_PANEL_HINT = "Réordonne les catégories. Nouveau reste en tête, Masqués en fin.",
+        ORDER_RESET = "Ordre par défaut",
     },
 }
 

@@ -35,6 +35,7 @@ core:SetScript("OnEvent", function(self, event, ...)
         BagsEnh_InitializeDB()
         BagsEnh_CreateOptionsPanel()
         BagsEnh_CreateCategoriesPanel()
+        BagsEnh_CreateOrderPanel()
         BagsEnh_AutoLoadProfile()
         BagsEnh_InstallHooks()
     else

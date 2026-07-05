@@ -76,7 +76,7 @@ end
 -- Keys carried by a profile
 BagsEnh_PROFILE_KEYS = {
     "scale", "columns", "iconSize", "spacing", "width", "height", "enabled", "showHidden",
-    "itemOverrides", "customRules", "collapsed",
+    "itemOverrides", "customRules", "collapsed", "categoryOrder",
 }
 
 function BagsEnh_SerializeTable(t)
