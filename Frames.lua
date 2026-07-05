@@ -72,6 +72,15 @@ local function AcquireButton(bag)
             icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
             icon:SetAllPoints(btn)  -- icon follows button size (icon-size slider)
         end
+        -- The slot frame (NormalTexture) has a fixed native size; anchor it
+        -- to the button so it shrinks too — otherwise it overlaps neighbours
+        -- when icons are made smaller.
+        local nt = btn:GetNormalTexture()
+        if nt then
+            nt:ClearAllPoints()
+            nt:SetPoint("TOPLEFT", btn, "TOPLEFT", -3, 3)
+            nt:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", 3, -3)
+        end
         btn.beBorder = BagsEnh_CreateIconBorder(btn, icon or btn)
 
         -- The native OnClick is left untouched: replacing it taints the
@@ -349,8 +358,9 @@ function BagsEnh_Refresh()
     -- Layout metrics
     local perRow = BagsEnhDB.columns or 8          -- items per row inside a section
     local iconSize = BagsEnhDB.iconSize or 37
-    local xStep = iconSize + 4
-    local yStep = iconSize + 4
+    local spacing = BagsEnhDB.spacing or 4
+    local xStep = iconSize + spacing
+    local yStep = iconSize + spacing
     local SUBHEADER_H = 15
     local SECTION_GAP = 12
 

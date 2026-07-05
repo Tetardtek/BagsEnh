@@ -4,6 +4,7 @@ local defaults = {
     scale = 1.0,
     columns = 7,          -- items per row inside a section
     iconSize = 37,
+    spacing = 4,          -- gap between item icons
     width = 620,          -- window size (resizable) — ~2 section columns
     height = 480,
     posX = 0,

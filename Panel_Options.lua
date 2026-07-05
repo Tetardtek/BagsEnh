@@ -106,10 +106,11 @@ function BagsEnh_CreateOptionsPanel()
     end
     local slCols = MakeSlider(P, "columns", ld.OPT_COLUMNS, 20, -150, 6, 20, 1, false, ReRender)
     local slIcon = MakeSlider(P, "iconSize", ld.OPT_ICON_SIZE, 240, -150, 24, 48, 1, false, ReRender)
+    local slSpacing = MakeSlider(P, "spacing", ld.OPT_SPACING, 20, -205, 0, 16, 1, false, ReRender)
 
     local btnReset = CreateFrame("Button", nil, P, "UIPanelButtonTemplate")
     btnReset:SetSize(160, 22)
-    btnReset:SetPoint("TOPLEFT", 16, -210)
+    btnReset:SetPoint("TOPLEFT", 16, -260)
     btnReset:SetText(ld.OPT_RESET_POS)
     btnReset:SetScript("OnClick", function()
         BagsEnhDB.posX, BagsEnhDB.posY = 0, 0
@@ -122,17 +123,17 @@ function BagsEnh_CreateOptionsPanel()
     -- Separator
     local sep = P:CreateTexture(nil, "ARTWORK")
     sep:SetHeight(1)
-    sep:SetPoint("TOPLEFT", 16, -240)
-    sep:SetPoint("TOPRIGHT", -16, -240)
+    sep:SetPoint("TOPLEFT", 16, -292)
+    sep:SetPoint("TOPRIGHT", -16, -292)
     sep:SetTexture(0.4, 0.4, 0.4, 0.6)
 
     -- Profiles section
     local pTitle = P:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    pTitle:SetPoint("TOPLEFT", 16, -252)
+    pTitle:SetPoint("TOPLEFT", 16, -304)
     pTitle:SetText(ld.PROF_SECTION)
 
     local dd = CreateFrame("Frame", "BagsEnhProfileDD", P, "UIDropDownMenuTemplate")
-    dd:SetPoint("TOPLEFT", 0, -272)
+    dd:SetPoint("TOPLEFT", 0, -324)
     UIDropDownMenu_SetWidth(dd, 160)
 
     local function OnPick(name)
@@ -167,13 +168,13 @@ function BagsEnh_CreateOptionsPanel()
         return b
     end
 
-    Btn(ld.PROF_LOAD, 16, -305, 90, function()
+    Btn(ld.PROF_LOAD, 16, -357, 90, function()
         local n = CurrentName()
         if n and BagsEnh_LoadProfile(n) then
             DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. ld.PROF_LOADED:format(n))
         end
     end)
-    Btn(ld.PROF_SAVE, 110, -305, 90, function()
+    Btn(ld.PROF_SAVE, 110, -357, 90, function()
         local n = CurrentName()
         if n then
             BagsEnh_SaveProfile(n)
@@ -182,10 +183,10 @@ function BagsEnh_CreateOptionsPanel()
             StaticPopup_Show("BAGSENH_SAVEAS", ld.PROF_NAME_PROMPT)
         end
     end)
-    Btn(ld.PROF_SAVEAS, 204, -305, 90, function()
+    Btn(ld.PROF_SAVEAS, 204, -357, 90, function()
         StaticPopup_Show("BAGSENH_SAVEAS", ld.PROF_NAME_PROMPT)
     end)
-    Btn(ld.PROF_DELETE, 16, -333, 90, function()
+    Btn(ld.PROF_DELETE, 16, -385, 90, function()
         local n = CurrentName()
         if n then
             BagsEnh_DeleteProfile(n)
@@ -194,12 +195,12 @@ function BagsEnh_CreateOptionsPanel()
             DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. ld.PROF_DELETED:format(n))
         end
     end)
-    Btn(ld.PROF_EXPORT, 110, -333, 90, function()
+    Btn(ld.PROF_EXPORT, 110, -385, 90, function()
         local n = CurrentName()
         local str = n and BagsEnh_ExportProfile(n)
         if str then StaticPopup_Show("BAGSENH_EXPORT", ld.PROF_EXPORT_HINT, nil, str) end
     end)
-    Btn(ld.PROF_IMPORT, 204, -333, 90, function()
+    Btn(ld.PROF_IMPORT, 204, -385, 90, function()
         StaticPopup_Show("BAGSENH_IMPORT", ld.PROF_IMPORT_HINT)
     end)
 
