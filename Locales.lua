@@ -52,6 +52,12 @@ BagsEnh_Locales = {
         PROF_DELETED = "profile deleted: %s",
         PROF_IMPORTED = "profile imported: %s",
         PROF_IMPORT_ERR = "invalid profile string.",
+        -- Custom categories panel
+        CAT_PANEL_TITLE = "Custom Categories",
+        CAT_PANEL_HINT = "Name patterns override built-in sorting. Shift-click an item into the field.",
+        CAT_PATTERN = "Item name (or fragment):",
+        CAT_ADD = "Add",
+        CAT_NO_RULES = "No custom rule yet.",
     },
     ["frFR"] = {
         TITLE = "BagsEnh",
@@ -106,6 +112,12 @@ BagsEnh_Locales = {
         PROF_DELETED = "profil supprimé : %s",
         PROF_IMPORTED = "profil importé : %s",
         PROF_IMPORT_ERR = "code de profil invalide.",
+        -- Custom categories panel
+        CAT_PANEL_TITLE = "Catégories perso",
+        CAT_PANEL_HINT = "Les motifs de nom priment sur le tri auto. Shift-clic un objet dans le champ.",
+        CAT_PATTERN = "Nom d'objet (ou fragment) :",
+        CAT_ADD = "Ajouter",
+        CAT_NO_RULES = "Aucune règle perso.",
     },
 }
 

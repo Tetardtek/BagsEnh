@@ -34,6 +34,7 @@ core:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_LOGIN" then
         BagsEnh_InitializeDB()
         BagsEnh_CreateOptionsPanel()
+        BagsEnh_CreateCategoriesPanel()
         BagsEnh_AutoLoadProfile()
         BagsEnh_InstallHooks()
     else

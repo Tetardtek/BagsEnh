@@ -130,7 +130,19 @@ function BagsEnh_Categorize(link)
 
     local category
 
-    -- 1. Custom rules (v1.1)
+    -- 1. Custom rules — user name patterns. Longest match wins
+    --    (deterministic when several patterns match the same item).
+    if BagsEnhDB.customRules then
+        local lname = name:lower()
+        local bestPat
+        for pattern, catKey in pairs(BagsEnhDB.customRules) do
+            if lname:find(pattern, 1, true) and (not bestPat or #pattern > #bestPat) then
+                bestPat = pattern
+                category = catKey
+            end
+        end
+    end
+
     -- 2. Ascension taxonomy
     if not category then
         for _, rule in ipairs(ASCENSION_PATTERNS) do
@@ -172,6 +184,24 @@ function BagsEnh_SetItemOverride(itemID, category)
     if not itemID then return end
     BagsEnhDB.itemOverrides = BagsEnhDB.itemOverrides or {}
     BagsEnhDB.itemOverrides[itemID] = category
+    if BagsEnh_MarkDirty then BagsEnh_MarkDirty() end
+end
+
+-- Adds a custom name-pattern rule (pattern is matched case-insensitively
+-- as a plain substring). Clears the cache so it takes effect immediately.
+function BagsEnh_AddCustomRule(pattern, category)
+    if not pattern or pattern == "" or not category then return false end
+    BagsEnhDB.customRules = BagsEnhDB.customRules or {}
+    BagsEnhDB.customRules[pattern:lower()] = category
+    BagsEnh_InvalidateCategoryCache()
+    if BagsEnh_MarkDirty then BagsEnh_MarkDirty() end
+    return true
+end
+
+function BagsEnh_RemoveCustomRule(pattern)
+    if not pattern or not BagsEnhDB.customRules then return end
+    BagsEnhDB.customRules[pattern:lower()] = nil
+    BagsEnh_InvalidateCategoryCache()
     if BagsEnh_MarkDirty then BagsEnh_MarkDirty() end
 end
 

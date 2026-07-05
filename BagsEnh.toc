@@ -11,5 +11,6 @@ SortEngine.lua
 Profiles.lua
 Frames.lua
 Panel_Options.lua
+Panel_Categories.lua
 Hooks.lua
 Core.lua
