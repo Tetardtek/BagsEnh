@@ -42,7 +42,10 @@ local ASCENSION_PATTERNS = {
     { pattern = "^Mystic Scroll", category = "mystic" },
 }
 
--- Native itemType → category (enUS client types)
+-- Native itemType → category.
+-- Static English fallback, completed at runtime by GetAuctionItemClasses():
+-- the client tells us its own (possibly custom/localized) class strings —
+-- robust against Ascension's custom item classes.
 local TYPE_TO_CATEGORY = {
     ["Weapon"] = "equipment",
     ["Armor"] = "equipment",
@@ -56,22 +59,65 @@ local TYPE_TO_CATEGORY = {
     ["Quest"] = "quest",
 }
 
-local categoryCache = {}   -- [itemID] = categoryKey
+local typeMapBuilt = false
+local function BuildTypeMap()
+    if typeMapBuilt or not GetAuctionItemClasses then return end
+    -- 3.3.5 order: Weapon, Armor, Container, Consumable, Glyph,
+    -- Trade Goods, Projectile, Quiver, Recipe, Gem, Miscellaneous, Quest
+    local weapon, armor, container, consumable, glyph, tradegoods,
+          projectile, quiver, recipe, gem, misc, quest = GetAuctionItemClasses()
+    local map = {
+        [weapon or ""] = "equipment",
+        [armor or ""] = "equipment",
+        [consumable or ""] = "consumables",
+        [tradegoods or ""] = "profession",
+        [recipe or ""] = "profession",
+        [projectile or ""] = "consumables",
+        [quiver or ""] = "equipment",
+        [gem or ""] = "gems",
+        [quest or ""] = "quest",
+    }
+    map[""] = nil
+    for k, v in pairs(map) do
+        TYPE_TO_CATEGORY[k] = v
+    end
+    typeMapBuilt = true
+end
+
+local categoryCache = {}   -- [itemID] = {category, subCat, equipLoc}
 
 function BagsEnh_InvalidateCategoryCache()
     categoryCache = {}
 end
 
--- Resolves an item link to a category key ("misc" fallback).
+-- Equipment slot display order (head → trinket, weapons last)
+BagsEnh_EQUIPLOC_ORDER = {
+    INVTYPE_HEAD = 1, INVTYPE_NECK = 2, INVTYPE_SHOULDER = 3,
+    INVTYPE_CLOAK = 4, INVTYPE_CHEST = 5, INVTYPE_ROBE = 5,
+    INVTYPE_BODY = 6, INVTYPE_TABARD = 7, INVTYPE_WRIST = 8,
+    INVTYPE_HAND = 9, INVTYPE_WAIST = 10, INVTYPE_LEGS = 11,
+    INVTYPE_FEET = 12, INVTYPE_FINGER = 13, INVTYPE_TRINKET = 14,
+    INVTYPE_WEAPON = 20, INVTYPE_2HWEAPON = 21, INVTYPE_WEAPONMAINHAND = 22,
+    INVTYPE_WEAPONOFFHAND = 23, INVTYPE_SHIELD = 24, INVTYPE_HOLDABLE = 25,
+    INVTYPE_RANGED = 26, INVTYPE_RANGEDRIGHT = 26, INVTYPE_THROWN = 27,
+    INVTYPE_RELIC = 28, INVTYPE_AMMO = 29,
+}
+
+-- Resolves an item link to (category, resolved, subCategory, equipLoc).
+-- resolved=false when the item wasn't in the client cache yet
+-- (caller may retry later, nothing is cached in that case).
+-- subCategory is set for equipment only: weapon type or armor material.
 function BagsEnh_Categorize(link)
-    if not link then return "misc" end
+    if not link then return "misc", true end
     local itemID = BagsEnh_ItemIDFromLink(link)
-    if itemID and categoryCache[itemID] then
-        return categoryCache[itemID]
+    local cached = itemID and categoryCache[itemID]
+    if cached then
+        return cached[1], true, cached[2], cached[3]
     end
 
-    local name, _, quality, _, _, itemType = GetItemInfo(link)
-    if not name then return "misc" end -- not cached yet, no cache write
+    BuildTypeMap()
+    local name, _, quality, _, _, itemType, itemSubType, _, equipLoc = GetItemInfo(link)
+    if not name then return "misc", false end -- not cached yet, no cache write
 
     local category
 
@@ -97,8 +143,34 @@ function BagsEnh_Categorize(link)
     end
 
     category = category or "misc"
-    if itemID then
-        categoryCache[itemID] = category
+
+    -- Equipment sub-category: weapon type / armor material (itemSubType,
+    -- localized by the client — display-ready as-is)
+    local subCat
+    if category == "equipment" and itemSubType then
+        subCat = itemSubType
     end
-    return category
+
+    if itemID then
+        categoryCache[itemID] = {category, subCat, equipLoc}
+    end
+    return category, true, subCat, equipLoc
+end
+
+-- Debug: dumps every bag item's raw GetItemInfo data + resolved category
+function BagsEnh_DebugDump()
+    BuildTypeMap()
+    DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh debug|r — name | type | subType | quality | category")
+    for bag = 0, 4 do
+        for slot = 1, GetContainerNumSlots(bag) or 0 do
+            local link = GetContainerItemLink(bag, slot)
+            if link then
+                local name, _, quality, _, _, itemType, itemSubType = GetItemInfo(link)
+                local cat = BagsEnh_Categorize(link)
+                DEFAULT_CHAT_FRAME:AddMessage(("%s | %s | %s | q%s | → %s"):format(
+                    tostring(name), tostring(itemType), tostring(itemSubType),
+                    tostring(quality), cat))
+            end
+        end
+    end
 end

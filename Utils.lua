@@ -9,15 +9,46 @@ BagsEnh_QUALITY_COLORS = {
     [6] = {0.90, 0.80, 0.50},
 }
 
--- Thin colored frame around an icon (same look as LootEnh)
-function BagsEnh_CreateIconBorder(f, icon, inset)
-    inset = inset or 1
-    local b = f:CreateTexture(nil, "BORDER")
-    b:SetTexture("Interface\\Buttons\\WHITE8X8")
-    b:SetPoint("TOPLEFT", icon, "TOPLEFT", -inset, inset)
-    b:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", inset, -inset)
-    b:Hide()
-    return b
+-- Colored OUTLINE around an icon (4 thin OVERLAY textures — never
+-- covers the icon, unlike a filled backdrop). Returns an object with
+-- Show / Hide / SetVertexColor.
+function BagsEnh_CreateIconBorder(f, icon, thickness)
+    thickness = thickness or 2
+    local sides = {}
+    for _, side in ipairs({"TOP", "BOTTOM", "LEFT", "RIGHT"}) do
+        local tex = f:CreateTexture(nil, "OVERLAY")
+        tex:SetTexture("Interface\\Buttons\\WHITE8X8")
+        if side == "TOP" then
+            tex:SetHeight(thickness)
+            tex:SetPoint("TOPLEFT", icon, "TOPLEFT", 0, 0)
+            tex:SetPoint("TOPRIGHT", icon, "TOPRIGHT", 0, 0)
+        elseif side == "BOTTOM" then
+            tex:SetHeight(thickness)
+            tex:SetPoint("BOTTOMLEFT", icon, "BOTTOMLEFT", 0, 0)
+            tex:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", 0, 0)
+        elseif side == "LEFT" then
+            tex:SetWidth(thickness)
+            tex:SetPoint("TOPLEFT", icon, "TOPLEFT", 0, 0)
+            tex:SetPoint("BOTTOMLEFT", icon, "BOTTOMLEFT", 0, 0)
+        else
+            tex:SetWidth(thickness)
+            tex:SetPoint("TOPRIGHT", icon, "TOPRIGHT", 0, 0)
+            tex:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", 0, 0)
+        end
+        tex:Hide()
+        sides[#sides + 1] = tex
+    end
+    local border = {}
+    function border:Show()
+        for _, t in ipairs(sides) do t:Show() end
+    end
+    function border:Hide()
+        for _, t in ipairs(sides) do t:Hide() end
+    end
+    function border:SetVertexColor(r, g, b, a)
+        for _, t in ipairs(sides) do t:SetVertexColor(r, g, b, a or 1) end
+    end
+    return border
 end
 
 function BagsEnh_FormatGold(copper)

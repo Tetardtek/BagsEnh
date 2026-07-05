@@ -24,9 +24,11 @@ core:SetScript("OnUpdate", function(self, dt)
     end
 end)
 
-local function MarkDirty()
+function BagsEnh_MarkDirty()
     dirty = true
+    elapsed = 0
 end
+local MarkDirty = BagsEnh_MarkDirty
 
 core:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_LOGIN" then
@@ -47,6 +49,8 @@ SlashCmdList["BAGSENH"] = function(msg)
     msg = (msg or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
     if msg == "toggle" then
         BagsEnh_SetUnified(not BagsEnhDB.enabled)
+    elseif msg == "debug" then
+        BagsEnh_DebugDump()
     elseif msg == "reset" then
         BagsEnhDB.posX, BagsEnhDB.posY = 0, 0
         if BagsEnhFrame then
