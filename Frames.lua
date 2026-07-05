@@ -415,6 +415,13 @@ function BagsEnh_Refresh()
     end
 end
 
+-- Applies live settings (scale) to the window and re-renders
+function BagsEnh_ApplySettings()
+    if not mainFrame then return end
+    mainFrame:SetScale(BagsEnhDB.scale or 1.0)
+    if mainFrame:IsShown() then BagsEnh_Refresh() end
+end
+
 function BagsEnh_Show()
     BagsEnh_CreateMainFrame()
     mainFrame:Show()

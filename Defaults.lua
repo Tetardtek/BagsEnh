@@ -7,8 +7,10 @@ local defaults = {
     posY = 0,
     collapsed = {},      -- [categoryKey] = true when section is collapsed
     customRules = {},    -- name pattern -> category key (panel UI, v1.1)
-    itemOverrides = {},  -- [itemID] = categoryKey | "hidden" (Alt-click menu)
+    itemOverrides = {},  -- [itemID] = categoryKey | "hidden" (badge menu)
     showHidden = false,  -- reveal the "hidden" section
+    profiles = {},       -- [name] = settings snapshot
+    charProfiles = {},   -- [char-realm] = profile name (auto-load)
 }
 
 function BagsEnh_DeepCopy(t)

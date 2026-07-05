@@ -8,6 +8,8 @@ Defaults.lua
 Utils.lua
 Categories.lua
 SortEngine.lua
+Profiles.lua
 Frames.lua
+Panel_Options.lua
 Hooks.lua
 Core.lua
