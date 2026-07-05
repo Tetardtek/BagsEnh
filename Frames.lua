@@ -347,16 +347,20 @@ function BagsEnh_Refresh()
             header:SetText(("|cffffd100%s|r |cff888888(%d)|r"):format(ld[BagsEnh_CATEGORY_LABELS[cat]] or cat, #items))
             yOff = yOff + HEADER_H
 
-            if cat == "equipment" then
-                -- Sub-categories: weapon type / armor material,
-                -- sorted by equip slot inside each group
+            if cat == "equipment" or cat == "profession" then
+                -- Sub-categories from itemSubType:
+                --   equipment  → weapon type / armor material (sorted by slot)
+                --   profession → Leather / Cloth / Herb / Cooking / ...
                 table.sort(items, function(a, b)
                     local sa, sb = a.subCat or "?", b.subCat or "?"
                     if sa ~= sb then return sa < sb end
                     local ea = BagsEnh_EQUIPLOC_ORDER[a.equipLoc or ""] or 99
                     local eb = BagsEnh_EQUIPLOC_ORDER[b.equipLoc or ""] or 99
                     if ea ~= eb then return ea < eb end
-                    return (a.quality or 0) > (b.quality or 0)
+                    if (a.quality or 0) ~= (b.quality or 0) then
+                        return (a.quality or 0) > (b.quality or 0)
+                    end
+                    return (a.link or "") < (b.link or "")
                 end)
 
                 local lastSub

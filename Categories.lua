@@ -153,10 +153,11 @@ function BagsEnh_Categorize(link)
 
     category = category or "misc"
 
-    -- Equipment sub-category: weapon type / armor material (itemSubType,
-    -- localized by the client — display-ready as-is)
+    -- Sub-category from itemSubType (localized by the client, display-ready):
+    -- equipment → weapon type / armor material
+    -- profession → Leather / Cloth / Herb / Cooking / Metal & Stone / ...
     local subCat
-    if category == "equipment" and itemSubType then
+    if (category == "equipment" or category == "profession") and itemSubType then
         subCat = itemSubType
     end
 
