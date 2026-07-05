@@ -183,6 +183,29 @@ function BagsEnh_CreateMainFrame()
     local close = CreateFrame("Button", nil, mainFrame, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", -2, -2)
 
+    -- Search box (top-right, left of the close button)
+    local search = CreateFrame("EditBox", "BagsEnhSearch", mainFrame, "InputBoxTemplate")
+    search:SetSize(140, 18)
+    search:SetPoint("TOPRIGHT", -28, -PADDING)
+    search:SetAutoFocus(false)
+    search:SetTextInsets(4, 4, 0, 0)
+    search:SetFontObject("GameFontHighlightSmall")
+    local sPlaceholder = search:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    sPlaceholder:SetPoint("LEFT", 6, 0)
+    sPlaceholder:SetText(ld.SEARCH_PLACEHOLDER)
+    search.placeholder = sPlaceholder
+    search:SetScript("OnTextChanged", function(self)
+        local txt = self:GetText()
+        self.placeholder:SetShown(txt == "")
+        BagsEnh_searchText = txt:lower()
+        BagsEnh_Refresh()
+    end)
+    search:SetScript("OnEscapePressed", function(self)
+        self:SetText("")
+        self:ClearFocus()
+    end)
+    mainFrame.search = search
+
     -- Footer: slots + money + hidden toggle
     mainFrame.slots = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     mainFrame.slots:SetPoint("BOTTOMLEFT", PADDING, PADDING - 2)
@@ -264,6 +287,14 @@ function BagsEnh_Refresh()
         end
     end
 
+    local query = BagsEnh_searchText
+    local function Matches(item)
+        if not query or query == "" then return true end
+        if not item.link then return false end
+        local name = GetItemInfo(item.link)
+        return name and name:lower():find(query, 1, true) ~= nil
+    end
+
     local function PlaceButton(item)
         local btn = AcquireButton(item.bag)
         btn:SetID(item.slot)
@@ -280,6 +311,13 @@ function BagsEnh_Refresh()
         else
             btn.beBorder:Hide()
         end
+
+        -- Search: dim non-matching items instead of removing them
+        -- (slots keep their place — easier to scan)
+        local dim = not Matches(item)
+        local icon = _G[btn:GetName() .. "IconTexture"]
+        if icon then icon:SetDesaturated(dim) end
+        btn:SetAlpha(dim and 0.25 or 1)
 
         btn:Show()
         col = col + 1
