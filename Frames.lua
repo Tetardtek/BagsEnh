@@ -183,6 +183,14 @@ function BagsEnh_CreateMainFrame()
     local close = CreateFrame("Button", nil, mainFrame, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", -2, -2)
 
+    -- Sort button (left of the search box)
+    local sortBtn = CreateFrame("Button", nil, mainFrame, "UIPanelButtonTemplate")
+    sortBtn:SetSize(64, 18)
+    sortBtn:SetPoint("TOPRIGHT", -174, -PADDING)
+    sortBtn:SetText(ld.SORT)
+    sortBtn:SetScript("OnClick", function() BagsEnh_SortBags() end)
+    mainFrame.sortBtn = sortBtn
+
     -- Search box (top-right, left of the close button)
     local search = CreateFrame("EditBox", "BagsEnhSearch", mainFrame, "InputBoxTemplate")
     search:SetSize(140, 18)

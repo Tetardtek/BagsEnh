@@ -49,6 +49,8 @@ SlashCmdList["BAGSENH"] = function(msg)
     msg = (msg or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
     if msg == "toggle" then
         BagsEnh_SetUnified(not BagsEnhDB.enabled)
+    elseif msg == "sort" then
+        BagsEnh_SortBags()
     elseif msg == "debug" then
         BagsEnh_DebugDump()
     elseif msg == "reset" then

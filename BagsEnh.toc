@@ -7,6 +7,7 @@ Locales.lua
 Defaults.lua
 Utils.lua
 Categories.lua
+SortEngine.lua
 Frames.lua
 Hooks.lua
 Core.lua
