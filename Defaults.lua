@@ -3,6 +3,7 @@ local defaults = {
     enabled = true,      -- unified view replaces default bags
     scale = 1.0,
     columns = 12,
+    iconSize = 37,
     posX = 0,
     posY = 0,
     collapsed = {},      -- [categoryKey] = true when section is collapsed

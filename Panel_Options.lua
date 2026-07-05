@@ -101,14 +101,15 @@ function BagsEnh_CreateOptionsPanel()
     end)
 
     local slScale = MakeSlider(P, "scale", ld.OPT_SCALE, 20, -95, 0.5, 2.0, 0.05, true, BagsEnh_ApplySettings)
-    local slCols = MakeSlider(P, "columns", ld.OPT_COLUMNS, 20, -150, 6, 20, 1, false, function()
-        if BagsEnh_MarkDirty then BagsEnh_MarkDirty() end
-        if BagsEnh_Refresh and BagsEnhFrame and BagsEnhFrame:IsShown() then BagsEnh_Refresh() end
-    end)
+    local function ReRender()
+        if BagsEnhFrame and BagsEnhFrame:IsShown() then BagsEnh_Refresh() end
+    end
+    local slCols = MakeSlider(P, "columns", ld.OPT_COLUMNS, 20, -150, 6, 20, 1, false, ReRender)
+    local slIcon = MakeSlider(P, "iconSize", ld.OPT_ICON_SIZE, 240, -150, 24, 48, 1, false, ReRender)
 
     local btnReset = CreateFrame("Button", nil, P, "UIPanelButtonTemplate")
     btnReset:SetSize(160, 22)
-    btnReset:SetPoint("TOPLEFT", 16, -200)
+    btnReset:SetPoint("TOPLEFT", 16, -210)
     btnReset:SetText(ld.OPT_RESET_POS)
     btnReset:SetScript("OnClick", function()
         BagsEnhDB.posX, BagsEnhDB.posY = 0, 0
@@ -206,6 +207,7 @@ function BagsEnh_CreateOptionsPanel()
         cbUnified:SetChecked(BagsEnhDB.enabled)
         slScale:SetValue(BagsEnhDB.scale or 1.0)
         slCols:SetValue(BagsEnhDB.columns or 12)
+        slIcon:SetValue(BagsEnhDB.iconSize or 37)
         BagsEnh_RefreshProfileDD()
     end)
 

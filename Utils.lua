@@ -75,7 +75,7 @@ end
 
 -- Keys carried by a profile
 BagsEnh_PROFILE_KEYS = {
-    "scale", "columns", "enabled", "showHidden",
+    "scale", "columns", "iconSize", "enabled", "showHidden",
     "itemOverrides", "customRules", "collapsed",
 }
 

@@ -70,6 +70,7 @@ local function AcquireButton(bag)
         local icon = _G[btn:GetName() .. "IconTexture"]
         if icon then
             icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+            icon:SetAllPoints(btn)  -- icon follows button size (icon-size slider)
         end
         btn.beBorder = BagsEnh_CreateIconBorder(btn, icon or btn)
 
@@ -260,10 +261,23 @@ function BagsEnh_CreateMainFrame()
     end)
     mainFrame.hiddenBtn:Hide()
 
-    -- Content area (sections are laid out inside)
-    mainFrame.content = CreateFrame("Frame", nil, mainFrame)
-    mainFrame.content:SetPoint("TOPLEFT", PADDING, -30)
-    mainFrame.content:SetPoint("BOTTOMRIGHT", -PADDING, 26)
+    -- Scroll viewport: content can be taller than the window; the wheel
+    -- scrolls it so nothing ever spills behind the footer.
+    local scroll = CreateFrame("ScrollFrame", "BagsEnhScroll", mainFrame)
+    scroll:SetPoint("TOPLEFT", PADDING, -30)
+    scroll:SetPoint("BOTTOMRIGHT", -PADDING, 26)
+    scroll:EnableMouseWheel(true)
+    scroll:SetScript("OnMouseWheel", function(self, delta)
+        local maxS = self.maxScroll or 0
+        local new = math.max(0, math.min(maxS, self:GetVerticalScroll() - delta * 40))
+        self:SetVerticalScroll(new)
+    end)
+    mainFrame.scroll = scroll
+
+    -- Content area (sections are laid out inside), scrolled by the viewport
+    mainFrame.content = CreateFrame("Frame", nil, scroll)
+    mainFrame.content:SetSize(400, 10)
+    scroll:SetScrollChild(mainFrame.content)
 
     -- Hidden per-bag parents: native item button behavior needs
     -- GetParent():GetID() == bag and button:GetID() == slot
@@ -313,8 +327,9 @@ function BagsEnh_Refresh()
 
     -- Render sections in canonical order
     local columns = BagsEnhDB.columns or 12
-    local xStep = BUTTON_SIZE + 4
-    local yStep = BUTTON_SIZE + 4
+    local iconSize = BagsEnhDB.iconSize or 37
+    local xStep = iconSize + 4
+    local yStep = iconSize + 4
     local SUBHEADER_H = 15
     local yOff = 0
     local col = 0
@@ -337,6 +352,7 @@ function BagsEnh_Refresh()
     local function PlaceButton(item)
         local btn = AcquireButton(item.bag)
         btn:SetID(item.slot)
+        btn:SetSize(iconSize, iconSize)
         btn:ClearAllPoints()
         btn:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", col * xStep, -yOff)
 
@@ -426,11 +442,26 @@ function BagsEnh_Refresh()
         end
     end
 
-    -- Fit window height to content (min 200, max 90% screen)
-    local height = 30 + yOff + 26
+    -- The content frame holds the full (possibly tall) layout
+    local contentW = columns * xStep
+    mainFrame.content:SetSize(contentW, math.max(yOff, 10))
+
+    -- Fit window to content, capped at 90% screen — beyond that the
+    -- viewport scrolls (mouse wheel) instead of the window overflowing.
+    local chromeTop, chromeBottom = 30, 26
     local maxH = UIParent:GetHeight() * 0.9
-    mainFrame:SetHeight(math.max(200, math.min(height, maxH)))
-    mainFrame:SetWidth(PADDING * 2 + columns * xStep + 4)
+    local wanted = chromeTop + yOff + chromeBottom
+    local winH = math.max(200, math.min(wanted, maxH))
+    mainFrame:SetHeight(winH)
+    mainFrame:SetWidth(PADDING * 2 + contentW + 4)
+
+    -- Update scroll range and clamp current offset
+    local viewH = winH - chromeTop - chromeBottom
+    local maxScroll = math.max(0, yOff - viewH)
+    mainFrame.scroll.maxScroll = maxScroll
+    if mainFrame.scroll:GetVerticalScroll() > maxScroll then
+        mainFrame.scroll:SetVerticalScroll(maxScroll)
+    end
 
     mainFrame.slots:SetText(ld.SLOTS:format(usedSlots, totalSlots))
     mainFrame.money:SetText(BagsEnh_FormatGold(GetMoney()))
