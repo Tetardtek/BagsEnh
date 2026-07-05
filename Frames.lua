@@ -71,22 +71,41 @@ local function AcquireButton(bag)
         end
         btn.beBorder = BagsEnh_CreateIconBorder(btn, icon or btn)
 
-        -- Alt+left-click opens the category menu, everything else is native
-        local origClick = btn:GetScript("OnClick")
-        btn:SetScript("OnClick", function(self, button, ...)
-            if button == "LeftButton" and IsAltKeyDown() then
-                ShowItemMenu(self)
-                return
-            end
-            if origClick then origClick(self, button, ...) end
+        -- The native OnClick is left untouched: replacing it taints the
+        -- button and blocks protected item use on the Ascension client.
+        -- The category menu lives on a separate corner badge that only
+        -- opens a menu (no protected call), so its taint is harmless.
+        local badge = CreateFrame("Button", nil, btn)
+        badge:SetSize(13, 13)
+        badge:SetPoint("TOPLEFT", 0, 0)
+        badge:SetFrameLevel(btn:GetFrameLevel() + 2)
+        local bt = badge:CreateTexture(nil, "OVERLAY")
+        bt:SetAllPoints()
+        bt:SetTexture("Interface\\Buttons\\WHITE8X8")
+        bt:SetVertexColor(0, 0, 0, 0.6)
+        local bl = badge:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        bl:SetPoint("CENTER", 0, 0)
+        bl:SetText("|cff8cd0ff+|r")
+        badge:SetScript("OnClick", function(self)
+            ShowItemMenu(self:GetParent())
         end)
+        badge:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(BagsEnh_L().TIP_MENU_BADGE, 0.55, 0.82, 1)
+            GameTooltip:Show()
+        end)
+        badge:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        badge:Hide()
+        btn.beBadge = badge
 
-        -- Discoverability: append the Alt-click hint to the native tooltip
-        btn:HookScript("OnEnter", function()
-            if GameTooltip:IsShown() then
-                GameTooltip:AddLine(BagsEnh_L().TIP_ALT_CLICK, 0.4, 0.75, 1)
-                GameTooltip:Show()
-            end
+        -- Badge only visible while hovering the item (stays up when the
+        -- cursor moves onto the badge itself)
+        btn:HookScript("OnEnter", function(self) self.beBadge:Show() end)
+        btn:HookScript("OnLeave", function(self)
+            if not self.beBadge:IsMouseOver() then self.beBadge:Hide() end
+        end)
+        badge:HookScript("OnLeave", function(self)
+            if not self:GetParent():IsMouseOver() then self:Hide() end
         end)
     else
         btn:SetParent(bagParents[bag])
