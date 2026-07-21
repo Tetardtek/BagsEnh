@@ -116,6 +116,29 @@ function BagsEnh_RemoveUserCategory(key)
     if BagsEnhFrame and BagsEnhFrame:IsShown() then BagsEnh_Refresh() end
 end
 
+-- Accent colour per category (section-header dot). User categories fall back
+-- to the series accent.
+BagsEnh_CATEGORY_COLORS = {
+    uncollected = {0.90, 0.73, 0.25},
+    new         = {0.10, 0.80, 1.00},
+    worldforged = {1.00, 0.50, 0.00},
+    mystic      = {0.64, 0.35, 0.93},
+    raidmats    = {0.30, 0.80, 0.75},
+    equipment   = {0.45, 0.62, 1.00},
+    consumables = {0.30, 0.82, 0.45},
+    gems        = {1.00, 0.45, 0.72},
+    profession  = {0.82, 0.62, 0.35},
+    quest       = {1.00, 0.85, 0.12},
+    junk        = {0.62, 0.62, 0.62},
+    misc        = {0.72, 0.75, 0.78},
+    hidden      = {0.50, 0.52, 0.55},
+}
+function BagsEnh_CategoryColor(key)
+    local c = BagsEnh_CATEGORY_COLORS[key]
+    if c then return c[1], c[2], c[3] end
+    return BagsEnh_ACCENT[1], BagsEnh_ACCENT[2], BagsEnh_ACCENT[3]
+end
+
 -- ============================================================
 -- Ascension data (name patterns — TODO v1.1: reuse LootEnh itemID lists)
 -- ============================================================

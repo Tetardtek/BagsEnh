@@ -91,9 +91,13 @@ end
 core:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_LOGIN" then
         BagsEnh_InitializeDB()
-        BagsEnh_CreateOptionsPanel()
-        BagsEnh_CreateCategoriesPanel()
-        BagsEnh_CreateOrderPanel()
+        -- Options panels are optional UI: guard each so a module that failed to
+        -- load (e.g. a newly added file on a stale .toc) can never abort the
+        -- critical init below (hooks, profiles) and leave the bags broken.
+        if BagsEnh_CreateOptionsPanel then BagsEnh_CreateOptionsPanel() end
+        if BagsEnh_CreateDisplayPanel then BagsEnh_CreateDisplayPanel() end
+        if BagsEnh_CreateCategoriesPanel then BagsEnh_CreateCategoriesPanel() end
+        if BagsEnh_CreateOrderPanel then BagsEnh_CreateOrderPanel() end
         BagsEnh_AutoLoadProfile()
         BagsEnh_InstallHooks()
         BagsEnh_ScanNewItems()   -- baseline snapshot, no items flagged

@@ -5,6 +5,31 @@ All notable changes to BagsEnh are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-07-21
+
+### Added
+- **Display panel** ("Affichage") — a dedicated options page gathering the
+  content toggles (item level, unlearned-appearance grouping) and the new
+  grouping controls in one place.
+- **Configurable gear grouping** — equipment and the "Unlearned Appearance"
+  section can be sub-grouped by *Material + slot*, *Material only*, *Slot only*,
+  or *None (flat)*, saved in profiles. Equipment now shows a two-level layout by
+  default (material → equip slot, e.g. Leather → Gloves → items) so identical
+  slots line up; the appearance section stays flat by default to save space.
+
+### Changed
+- **Visual pass**: flat dark panel with a thin accent-tinted border, a proper
+  title bar closed by dividers, header buttons aligned in a chain (no more magic
+  offsets), category headers tinted per category with a colour dot, and a
+  fade-in when the window opens. The equipped-bags popup matches the new style.
+- The item level and unlearned-appearance toggles moved from the main panel to
+  the new Display panel.
+
+### Fixed
+- Login init is now resilient: an options-panel module that fails to load (for
+  instance a newly added file on a stale `.toc`) can no longer abort addon setup
+  (hooks, profiles) and leave the bags non-functional.
+
 ## [1.1.0] - 2026-07-21
 
 ### Added
@@ -52,5 +77,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   auto-load.
 - English (enUS) and French (frFR) localization.
 
+[1.2.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v1.2.0
 [1.1.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v1.1.0
 [1.0.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v1.0.0

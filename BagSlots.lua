@@ -258,18 +258,27 @@ local function CreatePopup()
     popup = CreateFrame("Frame", "BagsEnhBagSlots", parent)
     popup:SetSize(204, 28 + 5 * 42 + 6)
     popup:SetPoint("TOPLEFT", parent, "TOPRIGHT", 4, 0)
+    local ac = BagsEnh_ACCENT or { 0.10, 0.80, 1.00 }
     popup:SetBackdrop({
-        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        edgeSize = 14,
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 },
     })
-    popup:SetBackdropColor(0, 0, 0, 0.9)
+    popup:SetBackdropColor(0.055, 0.075, 0.09, 0.96)
+    popup:SetBackdropBorderColor(ac[1], ac[2], ac[3], 0.55)
     popup:SetFrameStrata("HIGH")
     popup:EnableMouse(true)
 
     local title = popup:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     title:SetPoint("TOPLEFT", 10, -8)
     title:SetText("|cff00ccff" .. BagsEnh_L().BAGSLOTS_TITLE .. "|r")
+    local tdiv = popup:CreateTexture(nil, "BORDER")
+    tdiv:SetTexture("Interface\\Buttons\\WHITE8X8")
+    tdiv:SetVertexColor(ac[1], ac[2], ac[3], 0.30)
+    tdiv:SetPoint("TOPLEFT", 1, -24)
+    tdiv:SetPoint("TOPRIGHT", -1, -24)
+    tdiv:SetHeight(1)
 
     local y = -26
     for bag = 0, 4 do

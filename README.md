@@ -35,6 +35,9 @@ external dependencies**. Part of the **Enh** series (sister addon of
   once you learn the appearance
 - **Your own categories**: create, rename, and delete custom sections, then
   file items into them (via the + badge or a name rule)
+- **Configurable gear grouping**: sub-group equipment (and the appearance
+  section) by *material + slot*, *material*, *slot*, or *none* — line up all
+  your gloves, or keep it compact, your call
 - **Sub-categories** from the client's own item data (localized):
   - Equipment → weapon type / armor material, sorted by equip slot
   - Profession & Trade → Leather / Cloth / Herb / Cooking / Metal & Stone…
@@ -90,8 +93,10 @@ external dependencies**. Part of the **Enh** series (sister addon of
 **Escape → Interface → AddOns → BagsEnh**:
 
 - **BagsEnh** — unified view toggle, window scale, items per row, icon size,
-  icon spacing, item level on gear, group unlearned appearances, profiles
-  (save/load/export/import)
+  icon spacing, profiles (save/load/export/import)
+- **Display** — item level on gear, group unlearned appearances, and how
+  equipment / the appearance section are sub-grouped (material + slot, material,
+  slot, or none)
 - **Custom Categories** — create/rename/delete your own categories, plus
   name-pattern rules
 - **Section Order** — reorder categories

@@ -182,10 +182,14 @@ local function AcquireCatHeader(catKey)
         b = CreateFrame("Button", nil, mainFrame.content)
         b:SetHeight(HEADER_H)
         b:RegisterForClicks("LeftButtonUp")
+        b.dot = b:CreateTexture(nil, "OVERLAY")
+        b.dot:SetTexture("Interface\\Buttons\\WHITE8X8")
+        b.dot:SetSize(3, 12)
+        b.dot:SetPoint("LEFT", 0, 0)
         b.arrow = b:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        b.arrow:SetPoint("LEFT", 0, 0)
+        b.arrow:SetPoint("LEFT", 9, 0)
         b.label = b:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        b.label:SetPoint("LEFT", 14, 0)
+        b.label:SetPoint("LEFT", 23, 0)
         b.label:SetJustifyH("LEFT")
         b:SetScript("OnClick", function(self)
             BagsEnhDB.collapsed = BagsEnhDB.collapsed or {}
@@ -242,12 +246,40 @@ function BagsEnh_CreateMainFrame()
     mainFrame:SetSize(BagsEnhDB.width or 400, BagsEnhDB.height or 480)
     mainFrame:SetPoint("CENTER", BagsEnhDB.posX or 0, BagsEnhDB.posY or 0)
     mainFrame:SetScale(BagsEnhDB.scale or 1.0)
+    -- Clean flat panel: solid dark fill + crisp 1px border tinted toward the
+    -- series accent. Reads as "designed" without shipping custom textures.
+    local ac = BagsEnh_ACCENT
     mainFrame:SetBackdrop({
-        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        edgeSize = 14,
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 },
     })
-    mainFrame:SetBackdropColor(0, 0, 0, 0.85)
+    mainFrame:SetBackdropColor(0.055, 0.075, 0.09, 0.94)
+    mainFrame:SetBackdropBorderColor(ac[1], ac[2], ac[3], 0.55)
+
+    -- Title bar: a faint lighter strip across the top, closed by an accent rule.
+    local tbar = mainFrame:CreateTexture(nil, "BORDER")
+    tbar:SetTexture("Interface\\Buttons\\WHITE8X8")
+    tbar:SetVertexColor(1, 1, 1, 0.045)
+    tbar:SetPoint("TOPLEFT", 1, -1)
+    tbar:SetPoint("TOPRIGHT", -1, -1)
+    tbar:SetHeight(26)
+    local tdiv = mainFrame:CreateTexture(nil, "BORDER")
+    tdiv:SetTexture("Interface\\Buttons\\WHITE8X8")
+    tdiv:SetVertexColor(ac[1], ac[2], ac[3], 0.35)
+    tdiv:SetPoint("TOPLEFT", 1, -27)
+    tdiv:SetPoint("TOPRIGHT", -1, -27)
+    tdiv:SetHeight(1)
+
+    -- Footer rule, mirrors the title divider.
+    local fdiv = mainFrame:CreateTexture(nil, "BORDER")
+    fdiv:SetTexture("Interface\\Buttons\\WHITE8X8")
+    fdiv:SetVertexColor(1, 1, 1, 0.08)
+    fdiv:SetPoint("BOTTOMLEFT", 1, 24)
+    fdiv:SetPoint("BOTTOMRIGHT", -1, 24)
+    fdiv:SetHeight(1)
+
     mainFrame:SetMovable(true)
     mainFrame:SetResizable(true)
     if mainFrame.SetMinResize then mainFrame:SetMinResize(240, 200) end
@@ -268,19 +300,19 @@ function BagsEnh_CreateMainFrame()
     -- ESC closes the window
     table.insert(UISpecialFrames, "BagsEnhFrame")
 
-    -- Title
+    -- Title (vertically centred in the 26px title bar)
     mainFrame.title = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    mainFrame.title:SetPoint("TOPLEFT", PADDING, -PADDING)
+    mainFrame.title:SetPoint("LEFT", mainFrame, "TOPLEFT", PADDING, -14)
     mainFrame.title:SetText("|cff00ccff" .. ld.TITLE .. "|r")
 
     -- Close button
     local close = CreateFrame("Button", nil, mainFrame, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", -2, -2)
+    close:SetPoint("TOPRIGHT", -3, -3)
 
     -- Equipped-bags button (left, next to the title) — opens the bag-slots popup
     local bagsBtn = CreateFrame("Button", nil, mainFrame, "UIPanelButtonTemplate")
     bagsBtn:SetSize(56, 18)
-    bagsBtn:SetPoint("TOPLEFT", 68, -PADDING + 1)
+    bagsBtn:SetPoint("LEFT", mainFrame.title, "RIGHT", 10, 0)
     bagsBtn:SetText(ld.BAGS_BUTTON)
     bagsBtn:SetScript("OnClick", function()
         if not BagsEnh_ToggleBagSlots then
@@ -295,35 +327,11 @@ function BagsEnh_CreateMainFrame()
     end)
     mainFrame.bagsBtn = bagsBtn
 
-    -- View toggle (Categories <-> OneBag), left of the search box
-    local viewBtn = CreateFrame("Button", nil, mainFrame, "UIPanelButtonTemplate")
-    viewBtn:SetSize(76, 18)
-    viewBtn:SetPoint("TOPRIGHT", -174, -PADDING)
-    viewBtn:SetScript("OnClick", function()
-        BagsEnhDB.viewMode = (BagsEnhDB.viewMode == "onebag") and "category" or "onebag"
-        BagsEnh_Refresh()
-    end)
-    viewBtn:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:SetText(BagsEnh_L().TIP_VIEW, 0.55, 0.82, 1)
-        GameTooltip:Show()
-    end)
-    viewBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    mainFrame.viewBtn = viewBtn
-
-    -- Sort button (physical sort) — only meaningful in OneBag, where the real
-    -- slots (and the result of the sort) are visible. Hidden in category view.
-    local sortBtn = CreateFrame("Button", nil, mainFrame, "UIPanelButtonTemplate")
-    sortBtn:SetSize(64, 18)
-    sortBtn:SetPoint("TOPRIGHT", -254, -PADDING)
-    sortBtn:SetText(ld.SORT)
-    sortBtn:SetScript("OnClick", function() BagsEnh_SortBags() end)
-    mainFrame.sortBtn = sortBtn
-
-    -- Search box (top-right, left of the close button)
+    -- Search box (top-right, just left of the close button) — anchor point for
+    -- the button chain so the header aligns itself, no magic offsets.
     local search = CreateFrame("EditBox", "BagsEnhSearch", mainFrame, "InputBoxTemplate")
     search:SetSize(140, 18)
-    search:SetPoint("TOPRIGHT", -28, -PADDING)
+    search:SetPoint("TOPRIGHT", -32, -6)
     search:SetAutoFocus(false)
     search:SetTextInsets(4, 4, 0, 0)
     search:SetFontObject("GameFontHighlightSmall")
@@ -342,6 +350,31 @@ function BagsEnh_CreateMainFrame()
         self:ClearFocus()
     end)
     mainFrame.search = search
+
+    -- View toggle (Categories <-> OneBag), chained left of the search box
+    local viewBtn = CreateFrame("Button", nil, mainFrame, "UIPanelButtonTemplate")
+    viewBtn:SetSize(76, 18)
+    viewBtn:SetPoint("RIGHT", search, "LEFT", -6, 0)
+    viewBtn:SetScript("OnClick", function()
+        BagsEnhDB.viewMode = (BagsEnhDB.viewMode == "onebag") and "category" or "onebag"
+        BagsEnh_Refresh()
+    end)
+    viewBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText(BagsEnh_L().TIP_VIEW, 0.55, 0.82, 1)
+        GameTooltip:Show()
+    end)
+    viewBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    mainFrame.viewBtn = viewBtn
+
+    -- Sort button (physical sort) — only meaningful in OneBag, where the real
+    -- slots (and the result of the sort) are visible. Hidden in category view.
+    local sortBtn = CreateFrame("Button", nil, mainFrame, "UIPanelButtonTemplate")
+    sortBtn:SetSize(64, 18)
+    sortBtn:SetPoint("RIGHT", viewBtn, "LEFT", -6, 0)
+    sortBtn:SetText(ld.SORT)
+    sortBtn:SetScript("OnClick", function() BagsEnh_SortBags() end)
+    mainFrame.sortBtn = sortBtn
 
     -- Footer: slots + money + hidden toggle
     mainFrame.slots = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -404,7 +437,10 @@ function BagsEnh_CreateMainFrame()
         bagParents[bag] = p
     end
 
-    mainFrame:SetScript("OnShow", function() BagsEnh_Refresh() end)
+    mainFrame:SetScript("OnShow", function(self)
+        if UIFrameFadeIn then UIFrameFadeIn(self, 0.12, 0, 1) end
+        BagsEnh_Refresh()
+    end)
     -- Closing the bags = you've seen the new items; clear the glow
     mainFrame:SetScript("OnHide", function()
         if BagsEnh_newItems then BagsEnh_newItems = {} end
@@ -572,6 +608,81 @@ function BagsEnh_Refresh()
         btn:Show()
     end
 
+    -- Sub-grouping mode for a category (nil = plain flat, no sub-headers).
+    -- equipment/appearance are user-configurable; profession is material-only.
+    local function GroupingFor(cat)
+        if cat == "equipment" then
+            local g = BagsEnhDB.equipGrouping or "material_slot"
+            return g ~= "none" and g or nil
+        elseif cat == "profession" then
+            return "material"
+        elseif cat == "uncollected" then
+            local g = BagsEnhDB.uncollectedGrouping or "none"
+            return g ~= "none" and g or nil
+        end
+        return nil
+    end
+
+    local function CmpMaterialFirst(a, b)
+        local sa, sb = a.subCat or "?", b.subCat or "?"
+        if sa ~= sb then return sa < sb end
+        local ea = BagsEnh_EQUIPLOC_ORDER[a.equipLoc or ""] or 99
+        local eb = BagsEnh_EQUIPLOC_ORDER[b.equipLoc or ""] or 99
+        if ea ~= eb then return ea < eb end
+        if (a.quality or 0) ~= (b.quality or 0) then return (a.quality or 0) > (b.quality or 0) end
+        return (a.link or "") < (b.link or "")
+    end
+    local function CmpSlotFirst(a, b)
+        local ea = BagsEnh_EQUIPLOC_ORDER[a.equipLoc or ""] or 99
+        local eb = BagsEnh_EQUIPLOC_ORDER[b.equipLoc or ""] or 99
+        if ea ~= eb then return ea < eb end
+        local sa, sb = a.subCat or "?", b.subCat or "?"
+        if sa ~= sb then return sa < sb end
+        if (a.quality or 0) ~= (b.quality or 0) then return (a.quality or 0) > (b.quality or 0) end
+        return (a.link or "") < (b.link or "")
+    end
+
+    -- Lays out a gear-like section with sub-headers per the grouping mode.
+    -- Returns the new running y.
+    local function RenderGrouped(items, mode, x0, y)
+        table.sort(items, mode == "slot" and CmpSlotFirst or CmpMaterialFirst)
+        local wantMat = (mode == "material_slot" or mode == "material")
+        local wantSlot = (mode == "material_slot" or mode == "slot")
+        local slotIndent = (mode == "material_slot") and 16 or 4
+        local lastMat, lastSlot, col = nil, nil, 0
+        for _, item in ipairs(items) do
+            if wantMat then
+                local mat = item.subCat or "?"
+                if mat ~= lastMat then
+                    if col > 0 then y = y + yStep; col = 0 end
+                    lastMat = mat; lastSlot = nil
+                    local sh = AcquireHeader()
+                    sh:ClearAllPoints()
+                    sh:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", x0 + 4, -y)
+                    sh:SetText("|cffaaaaaa" .. mat .. "|r")
+                    y = y + SUBHEADER_H
+                end
+            end
+            if wantSlot then
+                local eloc = item.equipLoc
+                if eloc and BagsEnh_EQUIPLOC_ORDER[eloc] and eloc ~= lastSlot then
+                    if col > 0 then y = y + yStep; col = 0 end
+                    lastSlot = eloc
+                    local sh2 = AcquireHeader()
+                    sh2:ClearAllPoints()
+                    sh2:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", x0 + slotIndent, -y)
+                    sh2:SetText("|cff808080" .. (_G[eloc] or eloc) .. "|r")
+                    y = y + SUBHEADER_H
+                end
+            end
+            PlaceButton(item, x0, col, y)
+            col = col + 1
+            if col >= perRow then col = 0; y = y + yStep end
+        end
+        if col > 0 then y = y + yStep end
+        return y
+    end
+
     local totalH = 0
     local onebag = BagsEnhDB.viewMode == "onebag"
 
@@ -616,49 +727,28 @@ function BagsEnh_Refresh()
             header:ClearAllPoints()
             header:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", x0, -y)
             header:SetWidth(sectionW)
-            header.arrow:SetText(collapsed and "|cffffd100>|r" or "|cffffd100v|r")
-            header.label:SetText(("|cffffd100%s|r |cff888888(%d)|r"):format(BagsEnh_CategoryLabel(cat), #items))
+            local cr, cg, cb = BagsEnh_CategoryColor(cat)
+            local hex = BagsEnh_ColorHex(cr, cg, cb)
+            header.dot:SetVertexColor(cr, cg, cb)
+            header.arrow:SetText(collapsed and ("|cff" .. hex .. ">|r") or ("|cff" .. hex .. "v|r"))
+            header.label:SetText(("|cff%s%s|r |cff777777(%d)|r"):format(hex, BagsEnh_CategoryLabel(cat), #items))
             y = y + HEADER_H
 
             if collapsed then
                 -- header only
-            elseif cat == "equipment" or cat == "profession" then
-                table.sort(items, function(a, b)
-                    local sa, sb = a.subCat or "?", b.subCat or "?"
-                    if sa ~= sb then return sa < sb end
-                    local ea = BagsEnh_EQUIPLOC_ORDER[a.equipLoc or ""] or 99
-                    local eb = BagsEnh_EQUIPLOC_ORDER[b.equipLoc or ""] or 99
-                    if ea ~= eb then return ea < eb end
-                    if (a.quality or 0) ~= (b.quality or 0) then
-                        return (a.quality or 0) > (b.quality or 0)
-                    end
-                    return (a.link or "") < (b.link or "")
-                end)
-                local lastSub, col = nil, 0
-                for _, item in ipairs(items) do
-                    local sub = item.subCat or "?"
-                    if sub ~= lastSub then
-                        if col > 0 then y = y + yStep; col = 0 end
-                        lastSub = sub
-                        local sh = AcquireHeader()
-                        sh:ClearAllPoints()
-                        sh:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", x0 + 4, -y)
-                        sh:SetText("|cffaaaaaa" .. sub .. "|r")
-                        y = y + SUBHEADER_H
-                    end
-                    PlaceButton(item, x0, col, y)
-                    col = col + 1
-                    if col >= perRow then col = 0; y = y + yStep end
-                end
-                if col > 0 then y = y + yStep end
             else
-                local col = 0
-                for _, item in ipairs(items) do
-                    PlaceButton(item, x0, col, y)
-                    col = col + 1
-                    if col >= perRow then col = 0; y = y + yStep end
+                local grouping = GroupingFor(cat)
+                if grouping then
+                    y = RenderGrouped(items, grouping, x0, y)
+                else
+                    local col = 0
+                    for _, item in ipairs(items) do
+                        PlaceButton(item, x0, col, y)
+                        col = col + 1
+                        if col >= perRow then col = 0; y = y + yStep end
+                    end
+                    if col > 0 then y = y + yStep end
                 end
-                if col > 0 then y = y + yStep end
             end
 
             colH[colIdx] = y + SECTION_GAP

@@ -1,3 +1,12 @@
+-- Enh series accent — the cyan (|cff00ccff) used across the addon's chrome.
+BagsEnh_ACCENT = { 0.10, 0.80, 1.00 }
+
+-- Float rgb (0-1) -> "rrggbb" for |cffXXXXXX color escapes.
+function BagsEnh_ColorHex(r, g, b)
+    return string.format("%02x%02x%02x",
+        math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5), math.floor(b * 255 + 0.5))
+end
+
 -- Item quality colors (rarity 0-6)
 BagsEnh_QUALITY_COLORS = {
     [0] = {0.62, 0.62, 0.62},
@@ -77,6 +86,7 @@ end
 BagsEnh_PROFILE_KEYS = {
     "scale", "columns", "iconSize", "spacing", "width", "height", "enabled", "showHidden",
     "viewMode", "showItemLevel", "groupUncollected",
+    "equipGrouping", "uncollectedGrouping",
     "itemOverrides", "customRules", "collapsed", "categoryOrder",
     "userCategories", "userCatSeq",
 }

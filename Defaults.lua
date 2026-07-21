@@ -12,6 +12,8 @@ local defaults = {
     viewMode = "category", -- "category" (sections) | "onebag" (flat, empty slots shown)
     showItemLevel = true, -- draw the item level on equippable items
     groupUncollected = true, -- Ascension: gear with an unlearned appearance -> its own section
+    equipGrouping = "material_slot", -- equipment sub-grouping: material_slot | material | slot | none
+    uncollectedGrouping = "none",    -- "unlearned appearance" sub-grouping (flat by default)
     collapsed = {},      -- [categoryKey] = true when section is collapsed
     userCategories = {}, -- [userKey] = display name (user-created sections)
     userCatSeq = 0,      -- monotonic counter for unique user category keys
