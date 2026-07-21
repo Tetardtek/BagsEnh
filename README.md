@@ -10,15 +10,31 @@ external dependencies**. Part of the **Enh** series (sister addon of
 
 ### Unified bag view
 - One window replaces all your bags, items grouped by category
+- **Two layouts, one click**: categorized view or **OneBag** (a single flat
+  grid of every slot in bag order, empty slots included) — toggle from the
+  header or `/be view`
 - **Multi-column flow**: sections spread across the window width and rebalance
   as you resize — more width, more columns
 - Fully **resizable** window (drag the bottom-right grip), draggable, position
   and size saved
 - Mouse-wheel scrolling — the content never overflows
+- **Item level** shown on gear icons (coloured by rarity)
+
+### Bag management
+- **Bags** popup: the backpack plus the four equipped bag slots with their
+  free/total counts
+- Left-click a slot to **swap** the bag, hover a bag to **highlight its slots**
+  in the grid, or **Empty** a bag into your others (bag-family aware, aborts in
+  combat)
 
 ### Smart categories
 - Built-in categories: Equipment, Consumables, Gems, Profession & Trade, Quest,
   Junk, Miscellaneous, plus Ascension-specific (Worldforged, Mystic Scrolls…)
+- **Unlearned Appearance** (Ascension): gear whose appearance you haven't
+  collected yet is grouped and pinned first; it returns to its normal category
+  once you learn the appearance
+- **Your own categories**: create, rename, and delete custom sections, then
+  file items into them (via the + badge or a name rule)
 - **Sub-categories** from the client's own item data (localized):
   - Equipment → weapon type / armor material, sorted by equip slot
   - Profession & Trade → Leather / Cloth / Herb / Cooking / Metal & Stone…
@@ -33,8 +49,8 @@ external dependencies**. Part of the **Enh** series (sister addon of
 
 ### Search & sort
 - Instant **search** — type to dim non-matching items (slots stay in place)
-- **Sort** button — physically reorganizes your bags (category → sub-type →
-  slot → quality), safe defensive engine that aborts in combat
+- **Sort** button (OneBag view) — physically reorganizes your bags by category,
+  safe defensive engine that aborts in combat
 
 ### Quality theming
 - Colored outline around item icons by rarity
@@ -64,6 +80,7 @@ external dependencies**. Part of the **Enh** series (sister addon of
 | Command | Action |
 |---------|--------|
 | `/be` | Toggle the bag window |
+| `/be view` | Switch between the categorized and OneBag layouts |
 | `/be toggle` | Switch between BagsEnh and the default Blizzard bags |
 | `/be sort` | Sort bags physically |
 | `/be reset` | Recenter the window |
@@ -73,8 +90,10 @@ external dependencies**. Part of the **Enh** series (sister addon of
 **Escape → Interface → AddOns → BagsEnh**:
 
 - **BagsEnh** — unified view toggle, window scale, items per row, icon size,
-  icon spacing, profiles (save/load/export/import)
-- **Custom Categories** — name-pattern rules
+  icon spacing, item level on gear, group unlearned appearances, profiles
+  (save/load/export/import)
+- **Custom Categories** — create/rename/delete your own categories, plus
+  name-pattern rules
 - **Section Order** — reorder categories
 
 ## Requirements

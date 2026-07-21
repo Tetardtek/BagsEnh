@@ -43,7 +43,7 @@ function BagsEnh_CreateOrderPanel()
             end
             row:ClearAllPoints()
             row:SetPoint("TOPLEFT", 16, -70 - (i - 1) * 26)
-            row.label:SetText(ld[BagsEnh_CATEGORY_LABELS[cat]] or cat)
+            row.label:SetText(BagsEnh_CategoryLabel(cat))
 
             row.up:SetScript("OnClick", function() BagsEnh_MoveCategory(cat, -1); Refresh() end)
             row.down:SetScript("OnClick", function() BagsEnh_MoveCategory(cat, 1); Refresh() end)

@@ -76,6 +76,13 @@ local function BuildTargetOrder()
         end
     end
     table.sort(items, function(a, b) return KeyLess(a.key, b.key) end)
+    -- Fill last-to-first: the item that would land at the end is placed first
+    -- (top-left in OneBag). Reversing the finished order keeps the category
+    -- grouping intact while flipping the direction items are laid down.
+    local n = #items
+    for i = 1, math.floor(n / 2) do
+        items[i], items[n - i + 1] = items[n - i + 1], items[i]
+    end
     return items
 end
 

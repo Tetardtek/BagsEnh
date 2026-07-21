@@ -7,6 +7,9 @@ core:RegisterEvent("PLAYER_LOGIN")
 core:RegisterEvent("BAG_UPDATE")
 core:RegisterEvent("PLAYER_MONEY")
 core:RegisterEvent("ITEM_LOCK_CHANGED")
+-- Ascension: fires when an appearance is learned — moves gear out of the
+-- "uncollected" section live. pcall-guarded: absent on vanilla 3.3.5 clients.
+pcall(function() core:RegisterEvent("APPEARANCE_COLLECTED") end)
 
 -- Coalesced refresh: BAG_UPDATE fires in bursts (AoE loot, mail),
 -- never refresh more than once per window
@@ -112,6 +115,9 @@ SlashCmdList["BAGSENH"] = function(msg)
     msg = (msg or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
     if msg == "toggle" then
         BagsEnh_SetUnified(not BagsEnhDB.enabled)
+    elseif msg == "view" then
+        BagsEnhDB.viewMode = (BagsEnhDB.viewMode == "onebag") and "category" or "onebag"
+        if BagsEnh_IsShown() then BagsEnh_Refresh() end
     elseif msg == "sort" then
         BagsEnh_SortBags()
     elseif msg == "debug" then

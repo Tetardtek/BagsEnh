@@ -8,6 +8,7 @@
 -- Display order of sections in the unified view
 BagsEnh_CATEGORY_ORDER = {
     "new",          -- v1.1 — LootEnh bridge
+    "uncollected",  -- Ascension: gear whose appearance isn't collected yet
     "worldforged",
     "mystic",
     "raidmats",
@@ -23,6 +24,7 @@ BagsEnh_CATEGORY_ORDER = {
 
 BagsEnh_CATEGORY_LABELS = {
     new = "CAT_NEW",
+    uncollected = "CAT_UNCOLLECTED",
     worldforged = "CAT_WORLDFORGED",
     mystic = "CAT_MYSTIC",
     raidmats = "CAT_RAIDMATS",
@@ -35,6 +37,84 @@ BagsEnh_CATEGORY_LABELS = {
     misc = "CAT_MISC",
     hidden = "CAT_HIDDEN",
 }
+
+-- ============================================================
+-- User-defined categories — BagsEnhDB.userCategories[key] = display name.
+-- Keys are "user<N>" (N = monotonic userCatSeq), never reused, so they never
+-- clash with the built-in keys and stay stable across renames.
+-- ============================================================
+function BagsEnh_IsUserCategory(key)
+    return BagsEnhDB and BagsEnhDB.userCategories and BagsEnhDB.userCategories[key] ~= nil
+end
+
+-- Display label for any category key: user name > localized built-in > raw key
+function BagsEnh_CategoryLabel(key)
+    local uc = BagsEnhDB and BagsEnhDB.userCategories
+    if uc and uc[key] then return uc[key] end
+    local ld = BagsEnh_L()
+    return ld[BagsEnh_CATEGORY_LABELS[key]] or key
+end
+
+-- User category keys in creation order (numeric suffix, not lexicographic)
+function BagsEnh_UserCategoryKeys()
+    local keys = {}
+    local uc = BagsEnhDB and BagsEnhDB.userCategories
+    if uc then
+        for k in pairs(uc) do keys[#keys + 1] = k end
+        table.sort(keys, function(a, b)
+            return (tonumber(a:match("%d+")) or 0) < (tonumber(b:match("%d+")) or 0)
+        end)
+    end
+    return keys
+end
+
+function BagsEnh_AddUserCategory(name)
+    if not name or name == "" then return nil end
+    BagsEnhDB.userCategories = BagsEnhDB.userCategories or {}
+    BagsEnhDB.userCatSeq = (BagsEnhDB.userCatSeq or 0) + 1
+    local key = "user" .. BagsEnhDB.userCatSeq
+    BagsEnhDB.userCategories[key] = name
+    if BagsEnh_MarkDirty then BagsEnh_MarkDirty() end
+    if BagsEnhFrame and BagsEnhFrame:IsShown() then BagsEnh_Refresh() end
+    return key
+end
+
+function BagsEnh_RenameUserCategory(key, name)
+    if not key or not name or name == "" then return end
+    if BagsEnhDB.userCategories and BagsEnhDB.userCategories[key] then
+        BagsEnhDB.userCategories[key] = name
+        if BagsEnh_MarkDirty then BagsEnh_MarkDirty() end
+        if BagsEnhFrame and BagsEnhFrame:IsShown() then BagsEnh_Refresh() end
+    end
+end
+
+-- Deleting a category also purges every reference to it (item overrides,
+-- name rules, collapse state, saved order) so nothing points at a ghost key.
+function BagsEnh_RemoveUserCategory(key)
+    if not key or not BagsEnhDB.userCategories then return end
+    BagsEnhDB.userCategories[key] = nil
+    if BagsEnhDB.itemOverrides then
+        for id, cat in pairs(BagsEnhDB.itemOverrides) do
+            if cat == key then BagsEnhDB.itemOverrides[id] = nil end
+        end
+    end
+    if BagsEnhDB.customRules then
+        for pat, cat in pairs(BagsEnhDB.customRules) do
+            if cat == key then BagsEnhDB.customRules[pat] = nil end
+        end
+    end
+    if BagsEnhDB.collapsed then BagsEnhDB.collapsed[key] = nil end
+    if BagsEnhDB.categoryOrder then
+        local kept = {}
+        for _, c in ipairs(BagsEnhDB.categoryOrder) do
+            if c ~= key then kept[#kept + 1] = c end
+        end
+        BagsEnhDB.categoryOrder = kept
+    end
+    BagsEnh_InvalidateCategoryCache()
+    if BagsEnh_MarkDirty then BagsEnh_MarkDirty() end
+    if BagsEnhFrame and BagsEnhFrame:IsShown() then BagsEnh_Refresh() end
+end
 
 -- ============================================================
 -- Ascension data (name patterns — TODO v1.1: reuse LootEnh itemID lists)
@@ -92,9 +172,18 @@ function BagsEnh_InvalidateCategoryCache()
     categoryCache = {}
 end
 
--- "new" always leads, "hidden" always trails; everything between is user-orderable.
-local FIXED_FIRST = "new"
+-- "uncollected" then "new" always lead (pinned, not reorderable); "hidden"
+-- always trails; everything between is user-orderable.
+local FIXED_FIRST = { "uncollected", "new" }
 local FIXED_LAST = "hidden"
+
+local function IsFixed(c)
+    if c == FIXED_LAST then return true end
+    for _, f in ipairs(FIXED_FIRST) do
+        if c == f then return true end
+    end
+    return false
+end
 
 -- Returns the orderable categories in the user's order, validated against
 -- the built-in list (drops unknowns, appends any category added later so a
@@ -102,9 +191,16 @@ local FIXED_LAST = "hidden"
 function BagsEnh_GetOrderableCategories()
     local default, valid = {}, {}
     for _, c in ipairs(BagsEnh_CATEGORY_ORDER) do
-        if c ~= FIXED_FIRST and c ~= FIXED_LAST then
+        if not IsFixed(c) then
             default[#default + 1] = c
             valid[c] = true
+        end
+    end
+    -- user categories are orderable too, appended after the built-ins by default
+    for _, k in ipairs(BagsEnh_UserCategoryKeys()) do
+        if not valid[k] then
+            default[#default + 1] = k
+            valid[k] = true
         end
     end
     local saved = BagsEnhDB and BagsEnhDB.categoryOrder
@@ -122,9 +218,12 @@ function BagsEnh_GetOrderableCategories()
     return result
 end
 
--- Full render order: new + orderable + hidden
+-- Full render order: uncollected + new + orderable + hidden
 function BagsEnh_GetCategoryOrder()
-    local list = { FIXED_FIRST }
+    local list = {}
+    for _, c in ipairs(FIXED_FIRST) do
+        list[#list + 1] = c
+    end
     for _, c in ipairs(BagsEnh_GetOrderableCategories()) do
         list[#list + 1] = c
     end
@@ -165,74 +264,101 @@ BagsEnh_EQUIPLOC_ORDER = {
 -- resolved=false when the item wasn't in the client cache yet
 -- (caller may retry later, nothing is cached in that case).
 -- subCategory is set for equipment only: weapon type or armor material.
+-- Ascension wardrobe: true when the item carries an appearance the player
+-- hasn't collected yet. Guarded so the addon still runs on a vanilla 3.3.5
+-- client where these C_Appearance APIs don't exist.
+function BagsEnh_IsUncollectedAppearance(itemID)
+    if not itemID then return false end
+    if not (C_Appearance and C_Appearance.GetItemAppearanceID
+            and C_AppearanceCollection and C_AppearanceCollection.IsAppearanceCollected) then
+        return false
+    end
+    local appearanceID = C_Appearance.GetItemAppearanceID(itemID)
+    if not appearanceID then return false end
+    return not C_AppearanceCollection.IsAppearanceCollected(appearanceID)
+end
+
 function BagsEnh_Categorize(link)
     if not link then return "misc", true end
     local itemID = BagsEnh_ItemIDFromLink(link)
 
-    -- User override (Alt-click menu) — absolute priority, never cached
+    -- User override (badge menu) — absolute priority, never cached
     local override = itemID and BagsEnhDB.itemOverrides and BagsEnhDB.itemOverrides[itemID]
     if override then
         return override, true
     end
 
+    -- Base category (type/rules) is cached; the appearance status is applied
+    -- live on top of it further down.
+    local baseCat, subCat, equipLoc
     local cached = itemID and categoryCache[itemID]
     if cached then
-        return cached[1], true, cached[2], cached[3]
-    end
+        baseCat, subCat, equipLoc = cached[1], cached[2], cached[3]
+    else
+        BuildTypeMap()
+        local name, _, quality, _, _, itemType, itemSubType, _, eLoc = GetItemInfo(link)
+        if not name then return "misc", false end -- not cached yet, no cache write
 
-    BuildTypeMap()
-    local name, _, quality, _, _, itemType, itemSubType, _, equipLoc = GetItemInfo(link)
-    if not name then return "misc", false end -- not cached yet, no cache write
+        local category
 
-    local category
-
-    -- 1. Custom rules — user name patterns. Longest match wins
-    --    (deterministic when several patterns match the same item).
-    if BagsEnhDB.customRules then
-        local lname = name:lower()
-        local bestPat
-        for pattern, catKey in pairs(BagsEnhDB.customRules) do
-            if lname:find(pattern, 1, true) and (not bestPat or #pattern > #bestPat) then
-                bestPat = pattern
-                category = catKey
+        -- 1. Custom rules — user name patterns. Longest match wins
+        --    (deterministic when several patterns match the same item).
+        if BagsEnhDB.customRules then
+            local lname = name:lower()
+            local bestPat
+            for pattern, catKey in pairs(BagsEnhDB.customRules) do
+                if lname:find(pattern, 1, true) and (not bestPat or #pattern > #bestPat) then
+                    bestPat = pattern
+                    category = catKey
+                end
             end
+        end
+
+        -- 2. Ascension taxonomy
+        if not category then
+            for _, rule in ipairs(ASCENSION_PATTERNS) do
+                if name:find(rule.pattern) then
+                    category = rule.category
+                    break
+                end
+            end
+        end
+
+        -- 3. Quality: junk
+        if not category and quality == 0 then
+            category = "junk"
+        end
+
+        -- 4. Native item type
+        if not category then
+            category = TYPE_TO_CATEGORY[itemType]
+        end
+
+        category = category or "misc"
+
+        -- Sub-category from itemSubType (localized by the client, display-ready):
+        -- equipment → weapon type / armor material
+        -- profession → Leather / Cloth / Herb / Cooking / Metal & Stone / ...
+        if (category == "equipment" or category == "profession") and itemSubType then
+            subCat = itemSubType
+        end
+        equipLoc = eLoc
+        baseCat = category
+
+        if itemID then
+            categoryCache[itemID] = {category, subCat, equipLoc}
         end
     end
 
-    -- 2. Ascension taxonomy
-    if not category then
-        for _, rule in ipairs(ASCENSION_PATTERNS) do
-            if name:find(rule.pattern) then
-                category = rule.category
-                break
-            end
-        end
+    -- Uncollected appearance (Ascension) overrides the base category, but is
+    -- checked live and never cached: learning the appearance moves the item
+    -- back to its normal category on the next refresh, no cache flush needed.
+    -- equipLoc is preserved so the item level badge still shows.
+    if itemID and BagsEnhDB.groupUncollected and BagsEnh_IsUncollectedAppearance(itemID) then
+        return "uncollected", true, subCat, equipLoc
     end
 
-    -- 3. Quality: junk
-    if not category and quality == 0 then
-        category = "junk"
-    end
-
-    -- 4. Native item type
-    if not category then
-        category = TYPE_TO_CATEGORY[itemType]
-    end
-
-    category = category or "misc"
-
-    -- Sub-category from itemSubType (localized by the client, display-ready):
-    -- equipment → weapon type / armor material
-    -- profession → Leather / Cloth / Herb / Cooking / Metal & Stone / ...
-    local subCat
-    if (category == "equipment" or category == "profession") and itemSubType then
-        subCat = itemSubType
-    end
-
-    if itemID then
-        categoryCache[itemID] = {category, subCat, equipLoc}
-    end
-    return category, true, subCat, equipLoc
+    return baseCat, true, subCat, equipLoc
 end
 
 -- Sets (or clears with nil) a user category override for an item

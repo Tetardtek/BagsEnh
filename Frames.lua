@@ -35,10 +35,10 @@ local function ShowItemMenu(btn)
     local menu = {
         { text = name or "?", isTitle = true, notCheckable = true },
     }
-    for _, cat in ipairs(BagsEnh_CATEGORY_ORDER) do
+    for _, cat in ipairs(BagsEnh_GetCategoryOrder()) do
         if cat ~= "new" and cat ~= "hidden" then
             menu[#menu + 1] = {
-                text = ld.MENU_MOVE_TO:format(ld[BagsEnh_CATEGORY_LABELS[cat]] or cat),
+                text = ld.MENU_MOVE_TO:format(BagsEnh_CategoryLabel(cat)),
                 checked = (overrides[itemID] == cat),
                 func = function() BagsEnh_SetItemOverride(itemID, cat) end,
             }
@@ -82,6 +82,26 @@ local function AcquireButton(bag)
             nt:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", 3, -3)
         end
         btn.beBorder = BagsEnh_CreateIconBorder(btn, icon or btn)
+
+        -- Item level (top-right, small) — shown for gear only. Drawn above the
+        -- icon with a thin shadow so it stays readable on bright textures.
+        local ilvl = btn:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+        ilvl:SetPoint("TOPRIGHT", btn, "TOPRIGHT", -1, -1)
+        ilvl:SetJustifyH("RIGHT")
+        ilvl:SetShadowColor(0, 0, 0, 1)
+        ilvl:SetShadowOffset(1, -1)
+        ilvl:Hide()
+        btn.beIlvl = ilvl
+
+        -- Bag highlight tint — lit when the matching bag is hovered in the
+        -- equipped-bags popup, so you can see which slots belong to it.
+        local bagHL = btn:CreateTexture(nil, "OVERLAY")
+        bagHL:SetTexture("Interface\\Buttons\\WHITE8X8")
+        bagHL:SetBlendMode("ADD")
+        bagHL:SetAllPoints(btn)
+        bagHL:SetVertexColor(1, 0.85, 0.2, 0.35)
+        bagHL:Hide()
+        btn.beBagHL = bagHL
 
         -- "New item" glow (inter-Enh bridge / autonomous detection)
         local glow = btn:CreateTexture(nil, "OVERLAY")
@@ -197,6 +217,20 @@ local function ReleaseAll()
     activeCatHeaders = {}
 end
 
+-- Lights up every visible slot belonging to bagID (nil clears all). Buttons
+-- carry their bag as their parent's ID, so both views resolve it the same way.
+function BagsEnh_HighlightBag(bagID)
+    for _, btn in ipairs(activeButtons) do
+        if btn.beBagHL then
+            if bagID and btn:GetParent():GetID() == bagID then
+                btn.beBagHL:Show()
+            else
+                btn.beBagHL:Hide()
+            end
+        end
+    end
+end
+
 -- ============================================================
 -- Main frame
 -- ============================================================
@@ -243,10 +277,45 @@ function BagsEnh_CreateMainFrame()
     local close = CreateFrame("Button", nil, mainFrame, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", -2, -2)
 
-    -- Sort button (left of the search box)
+    -- Equipped-bags button (left, next to the title) — opens the bag-slots popup
+    local bagsBtn = CreateFrame("Button", nil, mainFrame, "UIPanelButtonTemplate")
+    bagsBtn:SetSize(56, 18)
+    bagsBtn:SetPoint("TOPLEFT", 68, -PADDING + 1)
+    bagsBtn:SetText(ld.BAGS_BUTTON)
+    bagsBtn:SetScript("OnClick", function()
+        if not BagsEnh_ToggleBagSlots then
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff5555BagsEnh:|r BagSlots module not loaded")
+            return
+        end
+        -- Surface any runtime error (Ascension hides Lua errors by default)
+        local ok, err = pcall(BagsEnh_ToggleBagSlots)
+        if not ok then
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff5555BagsEnh bags error:|r " .. tostring(err))
+        end
+    end)
+    mainFrame.bagsBtn = bagsBtn
+
+    -- View toggle (Categories <-> OneBag), left of the search box
+    local viewBtn = CreateFrame("Button", nil, mainFrame, "UIPanelButtonTemplate")
+    viewBtn:SetSize(76, 18)
+    viewBtn:SetPoint("TOPRIGHT", -174, -PADDING)
+    viewBtn:SetScript("OnClick", function()
+        BagsEnhDB.viewMode = (BagsEnhDB.viewMode == "onebag") and "category" or "onebag"
+        BagsEnh_Refresh()
+    end)
+    viewBtn:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText(BagsEnh_L().TIP_VIEW, 0.55, 0.82, 1)
+        GameTooltip:Show()
+    end)
+    viewBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    mainFrame.viewBtn = viewBtn
+
+    -- Sort button (physical sort) — only meaningful in OneBag, where the real
+    -- slots (and the result of the sort) are visible. Hidden in category view.
     local sortBtn = CreateFrame("Button", nil, mainFrame, "UIPanelButtonTemplate")
     sortBtn:SetSize(64, 18)
-    sortBtn:SetPoint("TOPRIGHT", -174, -PADDING)
+    sortBtn:SetPoint("TOPRIGHT", -254, -PADDING)
     sortBtn:SetText(ld.SORT)
     sortBtn:SetScript("OnClick", function() BagsEnh_SortBags() end)
     mainFrame.sortBtn = sortBtn
@@ -353,8 +422,10 @@ function BagsEnh_Refresh()
 
     ReleaseAll()
 
-    -- Collect items grouped by category
+    -- Collect items grouped by category (category view) and as a flat
+    -- slot list including empty slots (OneBag view).
     local groups = {}
+    local allSlots = {}         -- every slot in bag order, item = nil when empty
     local usedSlots, totalSlots = 0, 0
     local unresolved = false
     for _, bag in ipairs(BAGS) do
@@ -366,12 +437,16 @@ function BagsEnh_Refresh()
                 usedSlots = usedSlots + 1
                 local cat, resolved, subCat, equipLoc = BagsEnh_Categorize(link)
                 if not resolved then unresolved = true end
-                groups[cat] = groups[cat] or {}
-                table.insert(groups[cat], {
+                local item = {
                     bag = bag, slot = slot, texture = texture,
                     count = count, quality = quality, link = link,
                     subCat = subCat, equipLoc = equipLoc,
-                })
+                }
+                groups[cat] = groups[cat] or {}
+                table.insert(groups[cat], item)
+                allSlots[#allSlots + 1] = { bag = bag, slot = slot, item = item }
+            else
+                allSlots[#allSlots + 1] = { bag = bag, slot = slot, item = nil }
             end
         end
     end
@@ -415,13 +490,33 @@ function BagsEnh_Refresh()
         return name and name:lower():find(query, 1, true) ~= nil
     end
 
-    local function PlaceButton(item, x0, col, y)
-        local btn = AcquireButton(item.bag)
-        btn:SetID(item.slot)
-        btn:SetSize(iconSize, iconSize)
-        btn:ClearAllPoints()
-        btn:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", x0 + col * xStep, -y)
+    local showIlvl = BagsEnhDB.showItemLevel
 
+    -- Item level shown only on real gear (equipLoc listed in EQUIPLOC_ORDER),
+    -- coloured by quality. Meaningless on consumables/mats, so hidden there.
+    local function SetItemLevel(btn, item)
+        if not showIlvl or not item.equipLoc or not BagsEnh_EQUIPLOC_ORDER[item.equipLoc] then
+            btn.beIlvl:Hide()
+            return
+        end
+        local _, _, _, iLevel = GetItemInfo(item.link)
+        if not iLevel or iLevel < 1 then
+            btn.beIlvl:Hide()
+            return
+        end
+        local qc = item.quality and BagsEnh_QUALITY_COLORS[item.quality]
+        if qc then
+            btn.beIlvl:SetTextColor(qc[1], qc[2], qc[3])
+        else
+            btn.beIlvl:SetTextColor(1, 1, 1)
+        end
+        btn.beIlvl:SetText(iLevel)
+        btn.beIlvl:Show()
+    end
+
+    -- Renders a filled slot into an already-positioned button.
+    local function RenderItem(btn, item)
+        btn:SetID(item.slot)
         SetItemButtonTexture(btn, item.texture)
         SetItemButtonCount(btn, item.count)
 
@@ -443,13 +538,68 @@ function BagsEnh_Refresh()
             btn.beBorder:Hide()
         end
 
+        SetItemLevel(btn, item)
+        btn.beBagHL:Hide()
+
         local dim = not Matches(item)
         local icon = _G[btn:GetName() .. "IconTexture"]
         if icon then icon:SetDesaturated(dim) end
         btn:SetAlpha(dim and 0.25 or 1)
+    end
+
+    -- Renders an empty slot (OneBag only): native button with texture cleared,
+    -- so the slot frame shows and item drops land in the real bag slot.
+    local function RenderEmpty(btn, slot)
+        btn:SetID(slot)
+        SetItemButtonTexture(btn, nil)
+        SetItemButtonCount(btn, 0)
+        btn.beItemID = nil
+        btn.beGlow:Hide()
+        btn.beBorder:Hide()
+        btn.beIlvl:Hide()
+        btn.beBagHL:Hide()
+        local icon = _G[btn:GetName() .. "IconTexture"]
+        if icon then icon:SetDesaturated(false) end
+        btn:SetAlpha((query and query ~= "") and 0.25 or 1)
+    end
+
+    local function PlaceButton(item, x0, col, y)
+        local btn = AcquireButton(item.bag)
+        btn:SetSize(iconSize, iconSize)
+        btn:ClearAllPoints()
+        btn:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", x0 + col * xStep, -y)
+        RenderItem(btn, item)
         btn:Show()
     end
 
+    local totalH = 0
+    local onebag = BagsEnhDB.viewMode == "onebag"
+
+    if onebag then
+    -- OneBag: every slot (filled + empty) in bag order, one continuous grid
+    -- filling the window width. Empty slots are shown so free space is visible
+    -- and items can be dropped straight into a real bag slot.
+    local cols = math.max(1, math.floor((viewW + spacing) / xStep))
+    local i = 0
+    for _, s in ipairs(allSlots) do
+        local col = i % cols
+        local row = math.floor(i / cols)
+        local btn = AcquireButton(s.bag)
+        btn:SetSize(iconSize, iconSize)
+        btn:ClearAllPoints()
+        btn:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", col * xStep, -(row * yStep))
+        if s.item then
+            RenderItem(btn, s.item)
+        else
+            RenderEmpty(btn, s.slot)
+        end
+        btn:Show()
+        i = i + 1
+    end
+    local rows = math.ceil(i / cols)
+    totalH = rows * yStep
+
+    else
     -- Render each section into the currently shortest column (balanced flow)
     for _, cat in ipairs(BagsEnh_GetCategoryOrder()) do
         local items = groups[cat]
@@ -467,7 +617,7 @@ function BagsEnh_Refresh()
             header:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", x0, -y)
             header:SetWidth(sectionW)
             header.arrow:SetText(collapsed and "|cffffd100>|r" or "|cffffd100v|r")
-            header.label:SetText(("|cffffd100%s|r |cff888888(%d)|r"):format(ld[BagsEnh_CATEGORY_LABELS[cat]] or cat, #items))
+            header.label:SetText(("|cffffd100%s|r |cff888888(%d)|r"):format(BagsEnh_CategoryLabel(cat), #items))
             y = y + HEADER_H
 
             if collapsed then
@@ -516,10 +666,11 @@ function BagsEnh_Refresh()
     end
 
     -- Tallest column drives the scrollable content height
-    local totalH = 0
     for i = 1, nbCols do
         if colH[i] > totalH then totalH = colH[i] end
     end
+    end -- viewMode branch
+
     mainFrame.content:SetHeight(math.max(totalH, 10))
 
     -- Window size is user-controlled (resize handle); content scrolls inside
@@ -534,9 +685,15 @@ function BagsEnh_Refresh()
     mainFrame.slots:SetText(ld.SLOTS:format(usedSlots, totalSlots))
     mainFrame.money:SetText(BagsEnh_FormatGold(GetMoney()))
 
-    -- Hidden items toggle (footer, only when relevant)
+    -- View toggle label reflects the current mode; Sort only shown in OneBag
+    -- (category view has no free slots to sort into — misleading there).
+    mainFrame.viewBtn:SetText(onebag and ld.VIEW_ONEBAG or ld.VIEW_CATEGORY)
+    if onebag then mainFrame.sortBtn:Show() else mainFrame.sortBtn:Hide() end
+
+    -- Hidden items toggle (footer, only when relevant) — category view only,
+    -- OneBag shows every real slot regardless of overrides.
     local hiddenCount = groups.hidden and #groups.hidden or 0
-    if hiddenCount > 0 or BagsEnhDB.showHidden then
+    if not onebag and (hiddenCount > 0 or BagsEnhDB.showHidden) then
         mainFrame.hiddenBtn:SetText(BagsEnhDB.showHidden
             and ld.BTN_HIDE_HIDDEN
             or ld.BTN_SHOW_HIDDEN:format(hiddenCount))

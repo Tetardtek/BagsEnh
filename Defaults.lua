@@ -9,7 +9,12 @@ local defaults = {
     height = 480,
     posX = 0,
     posY = 0,
+    viewMode = "category", -- "category" (sections) | "onebag" (flat, empty slots shown)
+    showItemLevel = true, -- draw the item level on equippable items
+    groupUncollected = true, -- Ascension: gear with an unlearned appearance -> its own section
     collapsed = {},      -- [categoryKey] = true when section is collapsed
+    userCategories = {}, -- [userKey] = display name (user-created sections)
+    userCatSeq = 0,      -- monotonic counter for unique user category keys
     customRules = {},    -- name pattern -> category key (panel UI, v1.1)
     itemOverrides = {},  -- [itemID] = categoryKey | "hidden" (badge menu)
     showHidden = false,  -- reveal the "hidden" section
