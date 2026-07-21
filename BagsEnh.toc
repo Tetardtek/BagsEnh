@@ -1,6 +1,6 @@
 ## Interface: 30300
-## Title: BagsEnh |cff00ccffv1.2.0|r
-## Version: 1.2.0
+## Title: BagsEnh |cff00ccffv2.0.0|r
+## Version: 2.0.0
 ## Notes: Unified bag view with smart categories. Enh series.
 ## SavedVariables: BagsEnhDB
 
@@ -12,6 +12,7 @@ SortEngine.lua
 Profiles.lua
 Frames.lua
 BagSlots.lua
+Bank.lua
 Panel_Options.lua
 Panel_Display.lua
 Panel_Categories.lua

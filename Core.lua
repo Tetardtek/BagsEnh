@@ -7,6 +7,16 @@ core:RegisterEvent("PLAYER_LOGIN")
 core:RegisterEvent("BAG_UPDATE")
 core:RegisterEvent("PLAYER_MONEY")
 core:RegisterEvent("ITEM_LOCK_CHANGED")
+-- Character bank (v2): only readable while its frame is open
+core:RegisterEvent("BANKFRAME_OPENED")
+core:RegisterEvent("BANKFRAME_CLOSED")
+core:RegisterEvent("PLAYERBANKSLOTS_CHANGED")
+core:RegisterEvent("PLAYERBANKBAGSLOTS_CHANGED")
+-- Guild-style banks (guild / personal / realm — Ascension routes all via the
+-- guild bank API and frame)
+core:RegisterEvent("GUILDBANKFRAME_OPENED")
+core:RegisterEvent("GUILDBANKFRAME_CLOSED")
+core:RegisterEvent("GUILDBANKBAGSLOTS_CHANGED")
 -- Ascension: fires when an appearance is learned — moves gear out of the
 -- "uncollected" section live. pcall-guarded: absent on vanilla 3.3.5 clients.
 pcall(function() core:RegisterEvent("APPEARANCE_COLLECTED") end)
@@ -104,6 +114,17 @@ core:SetScript("OnEvent", function(self, event, ...)
     elseif event == "BAG_UPDATE" then
         BagsEnh_ScanNewItems()   -- detect new items even while closed
         if BagsEnh_IsShown() then MarkDirty() end
+    elseif event == "BANKFRAME_OPENED" then
+        if BagsEnh_ShowBank then BagsEnh_ShowBank() end
+    elseif event == "BANKFRAME_CLOSED" then
+        if BagsEnh_HideBank then BagsEnh_HideBank() end
+    elseif event == "PLAYERBANKSLOTS_CHANGED" or event == "PLAYERBANKBAGSLOTS_CHANGED"
+        or event == "GUILDBANKBAGSLOTS_CHANGED" then
+        if BagsEnh_IsBankShown and BagsEnh_IsBankShown() then BagsEnh_RefreshBank() end
+    elseif event == "GUILDBANKFRAME_OPENED" then
+        if BagsEnh_ShowGuildBank then BagsEnh_ShowGuildBank() end
+    elseif event == "GUILDBANKFRAME_CLOSED" then
+        if BagsEnh_HideBank then BagsEnh_HideBank() end
     else
         if BagsEnh_IsShown() then
             MarkDirty()

@@ -2,8 +2,9 @@
 
 A World of Warcraft addon for **Ascension WoW** (3.3.0) that replaces the default
 bags with a single unified window: smart categories, sub-categories for gear and
-trade goods, instant search, physical sorting, and full customization — with **no
-external dependencies**. Part of the **Enh** series (sister addon of
+trade goods, instant search, physical sorting, categorized **bank** views (incl.
+the guild / personal / realm banks), and full customization — with **no external
+dependencies**. Part of the **Enh** series (sister addon of
 [LootEnh](https://github.com/Tetardtek/LootEnh)).
 
 ## Features
@@ -26,6 +27,15 @@ external dependencies**. Part of the **Enh** series (sister addon of
 - Left-click a slot to **swap** the bag, hover a bag to **highlight its slots**
   in the grid, or **Empty** a bag into your others (bag-family aware, aborts in
   combat)
+
+### Bank (Ascension)
+- Opens a categorized window at the banker for **every bank type**: character
+  bank, and the guild / personal / realm banks
+- Guild-style banks show **all tabs merged into one categorized view** — no more
+  hunting tab by tab
+- **Search**, plus full interaction: click to pick up / withdraw, right-click to
+  withdraw a stack, drop an item on the window to deposit
+- The default bank window is hidden while BagsEnh drives it (toggle in Display)
 
 ### Smart categories
 - Built-in categories: Equipment, Consumables, Gems, Profession & Trade, Quest,
@@ -94,9 +104,9 @@ external dependencies**. Part of the **Enh** series (sister addon of
 
 - **BagsEnh** — unified view toggle, window scale, items per row, icon size,
   icon spacing, profiles (save/load/export/import)
-- **Display** — item level on gear, group unlearned appearances, and how
-  equipment / the appearance section are sub-grouped (material + slot, material,
-  slot, or none)
+- **Display** — item level on gear, group unlearned appearances, hide the
+  default bank window, and how equipment / the appearance section are
+  sub-grouped (material + slot, material, slot, or none)
 - **Custom Categories** — create/rename/delete your own categories, plus
   name-pattern rules
 - **Section Order** — reorder categories

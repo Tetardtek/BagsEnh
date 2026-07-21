@@ -5,6 +5,29 @@ All notable changes to BagsEnh are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-07-21
+
+### Added
+- **Bank views** — a categorized window for every bank type on Ascension,
+  reusing the whole engine (categories, colours, item level, unlearned
+  appearance):
+  - **Character bank** (main bank + the 7 bank bag slots), container-based, with
+    native item behaviour (click / tooltip / shift-move to bags).
+  - **Guild / Personal / Realm bank** — Ascension routes all three through the
+    guild bank API; BagsEnh detects the type and shows **every tab merged into a
+    single categorized view**, so there's no more sorting by tab.
+- **Bank search** — filter bank contents just like the bags.
+- **Bank interaction** — left-click to pick up / deposit onto a slot,
+  right-click to withdraw a stack to your bags, and **drop an item on the window
+  to deposit** it (the merged view shows no empty slots, so this is how you put
+  things in). Shift / Ctrl keep the native modified click (chat link, dress-up).
+- **Hide the default bank window** (Display panel) — the native bank and guild
+  bank frames are stowed off-screen while BagsEnh drives the bank. On by default.
+
+### Notes
+- Bank contents are read while the bank window is open at the banker; an offline
+  cache (browse a bank while away from it) is planned for a later release.
+
 ## [1.2.0] - 2026-07-21
 
 ### Added
@@ -77,6 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   auto-load.
 - English (enUS) and French (frFR) localization.
 
+[2.0.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v2.0.0
 [1.2.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v1.2.0
 [1.1.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v1.1.0
 [1.0.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v1.0.0

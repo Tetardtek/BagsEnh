@@ -57,16 +57,17 @@ function BagsEnh_CreateDisplayPanel()
         BagsEnh_InvalidateCategoryCache()
         ReRender()
     end)
+    local cbHideBank = MakeCheck(P, "hideNativeBank", ld.OPT_HIDE_NATIVE_BANK, 16, -118)
 
     -- ============================================================
     -- Grouping
     -- ============================================================
     local s2 = P:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    s2:SetPoint("TOPLEFT", 16, -132)
+    s2:SetPoint("TOPLEFT", 16, -154)
     s2:SetText("|cff00ccff" .. ld.DISP_GROUPING .. "|r")
 
     local hint = P:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    hint:SetPoint("TOPLEFT", 16, -152)
+    hint:SetPoint("TOPLEFT", 16, -174)
     hint:SetWidth(400)
     hint:SetJustifyH("LEFT")
     hint:SetText(ld.DISP_GROUPING_HINT)
@@ -103,12 +104,13 @@ function BagsEnh_CreateDisplayPanel()
         end
     end
 
-    MakeGroupingDD("equipGrouping", ld.OPT_EQUIP_GROUPING, -178)
-    MakeGroupingDD("uncollectedGrouping", ld.OPT_UNCOLLECTED_GROUPING, -212)
+    MakeGroupingDD("equipGrouping", ld.OPT_EQUIP_GROUPING, -200)
+    MakeGroupingDD("uncollectedGrouping", ld.OPT_UNCOLLECTED_GROUPING, -234)
 
     P:SetScript("OnShow", function()
         cbIlvl:SetChecked(BagsEnhDB.showItemLevel)
         cbUncollected:SetChecked(BagsEnhDB.groupUncollected)
+        cbHideBank:SetChecked(BagsEnhDB.hideNativeBank)
         for _, r in ipairs(refreshers) do r() end
     end)
 
