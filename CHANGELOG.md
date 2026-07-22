@@ -5,6 +5,17 @@ All notable changes to BagsEnh are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2026-07-22
+
+### Fixed
+- Guild / personal / realm bank crashed on open: the item count was lost to
+  Lua's `and/or` truncation of multiple return values (`used` / `total` became
+  `nil`). Replaced with an explicit branch.
+- Promoting a trade-goods subtype crashed when the promoted category was
+  labelled: a helper (`BuildProfessionOrder`) was defined after its first
+  caller, so it resolved to a nil global. The profession-order helpers now sit
+  ahead of everything that uses them.
+
 ## [2.1.0] - 2026-07-22
 
 ### Added
@@ -120,6 +131,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   auto-load.
 - English (enUS) and French (frFR) localization.
 
+[2.1.1]: https://github.com/Tetardtek/BagsEnh/releases/tag/v2.1.1
 [2.1.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v2.1.0
 [2.0.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v2.0.0
 [1.2.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v1.2.0

@@ -5,6 +5,49 @@
 -- realms will move it around.
 -- ============================================================
 
+-- ============================================================
+-- Trade Goods subtype order/maps (defined first — used by CategoryLabel,
+-- Categorize and the grouping engine below). Curated display order expressed
+-- as positions in the client's own GetAuctionItemSubClasses(6) list, so it is
+-- locale-independent. Ascension order: 1 Elemental, 2 Cloth, 3 Leather,
+-- 4 Metal & Stone, 5 Meat, 6 Herb, 7 Enchanting, 8 Jewelcrafting, 9 Parts,
+-- 10 Devices, 11 Explosives, 12 Materials, 13 Other, 14 Armor Ench,
+-- 15 Weapon Ench. Gathering mats first, then per-profession, misc last.
+-- ============================================================
+local TRADEGOODS_ORDER_BY_INDEX = { 6, 4, 3, 2, 5, 1, 7, 8, 9, 10, 11, 14, 15, 12, 13 }
+local professionSubRank        -- [name] = display rank
+local profSubName              -- [clientIndex] = localized name
+local profNameToIndex          -- [name] = clientIndex
+local function BuildProfessionOrder()
+    if professionSubRank or type(GetAuctionItemSubClasses) ~= "function" then return end
+    local subs = { GetAuctionItemSubClasses(6) }
+    if #subs == 0 then return end   -- API not ready yet; retry on the next call
+    local rankByIndex = {}
+    for rank, idx in ipairs(TRADEGOODS_ORDER_BY_INDEX) do rankByIndex[idx] = rank end
+    professionSubRank, profSubName, profNameToIndex = {}, {}, {}
+    for i, name in ipairs(subs) do
+        professionSubRank[name] = rankByIndex[i] or (100 + i)
+        profSubName[i] = name
+        profNameToIndex[name] = i
+    end
+end
+
+-- Trade Goods subtypes in curated display order: { index=clientIndex, name=... }
+function BagsEnh_ProfSubtypes()
+    BuildProfessionOrder()
+    local list = {}
+    if not profSubName then return list end
+    for idx, name in pairs(profSubName) do
+        list[#list + 1] = { index = idx, name = name, rank = professionSubRank[name] or 999 }
+    end
+    table.sort(list, function(a, b) return a.rank < b.rank end)
+    return list
+end
+
+function BagsEnh_IsProfPromoted(index)
+    return BagsEnhDB and BagsEnhDB.promotedProf and BagsEnhDB.promotedProf[index] ~= nil
+end
+
 -- Display order of sections in the unified view
 BagsEnh_CATEGORY_ORDER = {
     "new",          -- v1.1 — LootEnh bridge
@@ -306,46 +349,6 @@ function BagsEnh_GroupingFor(cat)
         return g ~= "none" and g or nil
     end
     return nil
-end
-
--- Curated display order for Trade Goods sub-sections, expressed as positions in
--- the client's own GetAuctionItemSubClasses(6) list (locale-independent).
--- Ascension order: 1 Elemental, 2 Cloth, 3 Leather, 4 Metal & Stone, 5 Meat,
--- 6 Herb, 7 Enchanting, 8 Jewelcrafting, 9 Parts, 10 Devices, 11 Explosives,
--- 12 Materials, 13 Other, 14 Armor Ench, 15 Weapon Ench.
--- We show gathering mats first, then per-profession, misc last.
-local TRADEGOODS_ORDER_BY_INDEX = { 6, 4, 3, 2, 5, 1, 7, 8, 9, 10, 11, 14, 15, 12, 13 }
-local professionSubRank        -- [name] = display rank
-local profSubName              -- [clientIndex] = localized name
-local profNameToIndex          -- [name] = clientIndex
-local function BuildProfessionOrder()
-    if professionSubRank or type(GetAuctionItemSubClasses) ~= "function" then return end
-    local subs = { GetAuctionItemSubClasses(6) }
-    if #subs == 0 then return end   -- API not ready yet; retry on the next call
-    local rankByIndex = {}
-    for rank, idx in ipairs(TRADEGOODS_ORDER_BY_INDEX) do rankByIndex[idx] = rank end
-    professionSubRank, profSubName, profNameToIndex = {}, {}, {}
-    for i, name in ipairs(subs) do
-        professionSubRank[name] = rankByIndex[i] or (100 + i)
-        profSubName[i] = name
-        profNameToIndex[name] = i
-    end
-end
-
--- Trade Goods subtypes in curated display order: { index=clientIndex, name=... }
-function BagsEnh_ProfSubtypes()
-    BuildProfessionOrder()
-    local list = {}
-    if not profSubName then return list end
-    for idx, name in pairs(profSubName) do
-        list[#list + 1] = { index = idx, name = name, rank = professionSubRank[name] or 999 }
-    end
-    table.sort(list, function(a, b) return a.rank < b.rank end)
-    return list
-end
-
-function BagsEnh_IsProfPromoted(index)
-    return BagsEnhDB and BagsEnhDB.promotedProf and BagsEnhDB.promotedProf[index] ~= nil
 end
 
 -- Sort key for a sub-category: profession subtypes get their curated rank so

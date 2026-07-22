@@ -226,7 +226,13 @@ function BagsEnh_RefreshBank()
     local ld = BagsEnh_L()
     ReleaseAll()
 
-    local raw, used, total = IsGuildStyle() and CollectGuildStyle() or CollectCharacter()
+    -- Explicit branch: and/or would truncate the collectors' multiple returns.
+    local raw, used, total
+    if IsGuildStyle() then
+        raw, used, total = CollectGuildStyle()
+    else
+        raw, used, total = CollectCharacter()
+    end
     local unresolved = false
 
     -- Group by category
