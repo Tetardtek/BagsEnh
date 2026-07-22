@@ -38,6 +38,19 @@ dependencies**. Part of the **Enh** series (sister addon of
 - **Resizable** (drag the grip), same sub-grouping as the bags
 - The default bank window is hidden while BagsEnh drives it (toggle in Display)
 
+### Warehouse (cross-character)
+- `/be alts` opens a **read-only** window to browse any character's bags and
+  banks (character / personal / realm / guild) from anywhere — no NPC needed
+- Character + container pickers, search, resizable; **open several at once**
+- Backed by an account-wide cache that fills in as you play each character
+
+### Currencies
+- Watched game currencies and **pinned item-currencies** show next to the gold
+- Pin any item as a currency from its **+ badge** — it joins a **Special**
+  section and its count appears in the footer
+- Hover a currency (or the gold) for a **per-character breakdown and total**;
+  mark shared currencies **account-wide** so they're shown once, not summed
+
 ### Smart categories
 - Built-in categories: Equipment, Consumables, Gems, Profession & Trade, Quest,
   Junk, Miscellaneous, plus Ascension-specific (Worldforged, Mystic Scrolls…)
@@ -96,6 +109,7 @@ dependencies**. Part of the **Enh** series (sister addon of
 | Command | Action |
 |---------|--------|
 | `/be` | Toggle the bag window |
+| `/be alts` | Open a cross-character warehouse window (read-only) |
 | `/be view` | Switch between the categorized and OneBag layouts |
 | `/be toggle` | Switch between BagsEnh and the default Blizzard bags |
 | `/be sort` | Sort bags physically |
@@ -111,6 +125,8 @@ dependencies**. Part of the **Enh** series (sister addon of
   default bank window, how equipment / the appearance section are sub-grouped
   (material + slot, material, slot, or none), and which trade goods get promoted
   to their own category
+- **Currency** — footer display, cross-character total, and the list of tracked
+  currencies with a per-currency "account-wide" flag
 - **Custom Categories** — create/rename/delete your own categories, plus
   name-pattern rules
 - **Section Order** — reorder categories

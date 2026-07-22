@@ -5,6 +5,30 @@ All notable changes to BagsEnh are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-07-22
+
+### Added
+- **Cross-character warehouse** — a read-only window (`/be alts`) to browse any
+  character's bags and banks (character bank, personal, realm, guild) from
+  anywhere, no NPC needed. Spawnable (open several at once), with a character +
+  container picker, search and resizing. Backed by an account-wide cache that
+  fills in as you play each character.
+- **Gold across characters** — hover the gold in the bags footer for a
+  per-character breakdown and grand total.
+- **Currency system** — watched game currencies and pinned item-currencies are
+  shown next to the gold. Pin any item as a currency from its `+` badge: it
+  joins a new **Special** section and its count appears in the footer. Hover a
+  currency for a per-character breakdown and total. A **Currency** options panel
+  toggles the footer display, the cross-character total and whether other
+  characters are included, and lists tracked currencies with a per-currency
+  **account-wide** flag (shown once instead of summed — tick it for shared
+  currencies; per-character ones like Runes of Ascension are summed).
+
+### Notes
+- The cache builds up as you visit each character's bags/banks and open their
+  banks; alt data appears once seen. The warehouse and cross-character totals
+  are read-only.
+
 ## [2.1.1] - 2026-07-22
 
 ### Fixed
@@ -131,6 +155,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   auto-load.
 - English (enUS) and French (frFR) localization.
 
+[2.2.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v2.2.0
 [2.1.1]: https://github.com/Tetardtek/BagsEnh/releases/tag/v2.1.1
 [2.1.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v2.1.0
 [2.0.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v2.0.0

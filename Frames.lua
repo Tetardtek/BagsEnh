@@ -36,7 +36,7 @@ local function ShowItemMenu(btn)
         { text = name or "?", isTitle = true, notCheckable = true },
     }
     for _, cat in ipairs(BagsEnh_GetCategoryOrder()) do
-        if cat ~= "new" and cat ~= "hidden" then
+        if cat ~= "new" and cat ~= "hidden" and cat ~= "special" then
             menu[#menu + 1] = {
                 text = ld.MENU_MOVE_TO:format(BagsEnh_CategoryLabel(cat)),
                 checked = (overrides[itemID] == cat),
@@ -44,6 +44,11 @@ local function ShowItemMenu(btn)
             }
         end
     end
+    menu[#menu + 1] = {
+        text = BagsEnh_IsPinnedItem(itemID) and ld.MENU_UNPIN or ld.MENU_PIN,
+        checked = BagsEnh_IsPinnedItem(itemID),
+        func = function() BagsEnh_TogglePinItem(itemID) end,
+    }
     menu[#menu + 1] = {
         text = ld.MENU_HIDE,
         checked = (overrides[itemID] == "hidden"),
@@ -382,6 +387,29 @@ function BagsEnh_CreateMainFrame()
     mainFrame.money = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     mainFrame.money:SetPoint("BOTTOMRIGHT", -PADDING, PADDING - 2)
 
+    -- Hover the gold → gold across every cached character + grand total.
+    local moneyHover = CreateFrame("Frame", nil, mainFrame)
+    moneyHover:SetAllPoints(mainFrame.money)
+    moneyHover:EnableMouse(true)
+    moneyHover:SetScript("OnEnter", function(self)
+        if not BagsEnh_CachedChars then return end
+        GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT")
+        GameTooltip:AddLine(BagsEnh_L().GOLD_ALLCHARS, 0.55, 0.82, 1)
+        local me, total = BagsEnh_CharKey and BagsEnh_CharKey(), 0
+        for _, key in ipairs(BagsEnh_CachedChars()) do
+            local e = BagsEnh_GetCache(key)
+            local money = (key == me) and GetMoney() or (e and e.money)
+            if money then
+                total = total + money
+                GameTooltip:AddDoubleLine(BagsEnh_CharColorName(key), BagsEnh_FormatGold(money), 1, 1, 1)
+            end
+        end
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddDoubleLine("|cffffd100" .. BagsEnh_L().GOLD_TOTAL .. "|r", BagsEnh_FormatGold(total))
+        GameTooltip:Show()
+    end)
+    moneyHover:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
     mainFrame.hiddenBtn = CreateFrame("Button", nil, mainFrame, "UIPanelButtonTemplate")
     mainFrame.hiddenBtn:SetSize(130, 18)
     mainFrame.hiddenBtn:SetPoint("BOTTOM", 0, 5)
@@ -452,6 +480,60 @@ end
 -- ============================================================
 -- Layout
 -- ============================================================
+-- Tracked currencies (watched game currencies + pinned items) as icon + count,
+-- laid out leftward from the gold. Hover shows the cross-character breakdown.
+local function CurrencyTooltip(self)
+    local cur = self.curData
+    if not cur then return end
+    GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    GameTooltip:AddLine(cur.name, 0.55, 0.82, 1)
+    if BagsEnhDB.currencyTotal ~= false and BagsEnh_CurrencyBreakdown then
+        local rows, total = BagsEnh_CurrencyBreakdown(cur.key)
+        for _, r in ipairs(rows) do
+            GameTooltip:AddDoubleLine(BagsEnh_CharColorName(r.char), r.count, 1, 1, 1)
+        end
+        GameTooltip:AddLine(" ")
+        local lbl = BagsEnh_CurShared(cur.key) and (BagsEnh_L().CUR_ACCOUNT or "Account")
+            or (BagsEnh_L().GOLD_TOTAL or "Total")
+        GameTooltip:AddDoubleLine("|cffffd100" .. lbl .. "|r", total)
+    else
+        GameTooltip:AddDoubleLine(BagsEnh_L().GOLD_TOTAL or "Total", cur.count)
+    end
+    GameTooltip:Show()
+end
+
+local function UpdateCurrencies()
+    if not mainFrame then return end
+    mainFrame.curWidgets = mainFrame.curWidgets or {}
+    local list = (BagsEnhDB.showCurrencies ~= false and BagsEnh_CurrencyList) and BagsEnh_CurrencyList() or {}
+    local anchor = mainFrame.money
+    for i, cur in ipairs(list) do
+        local w = mainFrame.curWidgets[i]
+        if not w then
+            w = CreateFrame("Button", nil, mainFrame)
+            w:SetHeight(14)
+            w.icon = w:CreateTexture(nil, "OVERLAY")
+            w.icon:SetSize(13, 13); w.icon:SetPoint("LEFT", 0, 0); w.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+            w.text = w:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            w.text:SetPoint("LEFT", w.icon, "RIGHT", 2, 0)
+            w:SetScript("OnEnter", CurrencyTooltip)
+            w:SetScript("OnLeave", function() GameTooltip:Hide() end)
+            mainFrame.curWidgets[i] = w
+        end
+        w.curData = cur
+        w.icon:SetTexture(cur.icon)
+        w.text:SetText(cur.count)
+        w:SetWidth(15 + (w.text:GetStringWidth() or 10))
+        w:ClearAllPoints()
+        w:SetPoint("RIGHT", anchor, "LEFT", -10, 0)
+        w:Show()
+        anchor = w
+    end
+    for j = #list + 1, #mainFrame.curWidgets do
+        if mainFrame.curWidgets[j] then mainFrame.curWidgets[j]:Hide() end
+    end
+end
+
 function BagsEnh_Refresh()
     if not mainFrame or not mainFrame:IsShown() then return end
     local ld = BagsEnh_L()
@@ -713,6 +795,7 @@ function BagsEnh_Refresh()
 
     mainFrame.slots:SetText(ld.SLOTS:format(usedSlots, totalSlots))
     mainFrame.money:SetText(BagsEnh_FormatGold(GetMoney()))
+    UpdateCurrencies()
 
     -- View toggle label reflects the current mode; Sort only shown in OneBag
     -- (category view has no free slots to sort into — misleading there).

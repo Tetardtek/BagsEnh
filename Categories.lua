@@ -51,6 +51,7 @@ end
 -- Display order of sections in the unified view
 BagsEnh_CATEGORY_ORDER = {
     "new",          -- v1.1 — LootEnh bridge
+    "special",      -- user-pinned "currency" items
     "uncollected",  -- Ascension: gear whose appearance isn't collected yet
     "worldforged",
     "mystic",
@@ -67,6 +68,7 @@ BagsEnh_CATEGORY_ORDER = {
 
 BagsEnh_CATEGORY_LABELS = {
     new = "CAT_NEW",
+    special = "CAT_SPECIAL",
     uncollected = "CAT_UNCOLLECTED",
     worldforged = "CAT_WORLDFORGED",
     mystic = "CAT_MYSTIC",
@@ -168,6 +170,7 @@ end
 -- to the series accent.
 BagsEnh_CATEGORY_COLORS = {
     uncollected = {0.90, 0.73, 0.25},
+    special     = {0.30, 0.85, 0.90},
     new         = {0.10, 0.80, 1.00},
     worldforged = {1.00, 0.50, 0.00},
     mystic      = {0.64, 0.35, 0.93},
@@ -505,6 +508,11 @@ function BagsEnh_Categorize(link)
         end
 
         category = category or "misc"
+
+        -- Items pinned as currencies get their own "special" section
+        if itemID and BagsEnhDB.itemCurrencies and BagsEnhDB.itemCurrencies[itemID] then
+            category = "special"
+        end
 
         -- Sub-category from itemSubType (localized by the client, display-ready):
         -- equipment → weapon type / armor material

@@ -7,6 +7,7 @@ core:RegisterEvent("PLAYER_LOGIN")
 core:RegisterEvent("BAG_UPDATE")
 core:RegisterEvent("PLAYER_MONEY")
 core:RegisterEvent("ITEM_LOCK_CHANGED")
+core:RegisterEvent("CURRENCY_DISPLAY_UPDATE")   -- watched currencies in the footer
 -- Character bank (v2): only readable while its frame is open
 core:RegisterEvent("BANKFRAME_OPENED")
 core:RegisterEvent("BANKFRAME_CLOSED")
@@ -106,20 +107,35 @@ core:SetScript("OnEvent", function(self, event, ...)
         -- critical init below (hooks, profiles) and leave the bags broken.
         if BagsEnh_CreateOptionsPanel then BagsEnh_CreateOptionsPanel() end
         if BagsEnh_CreateDisplayPanel then BagsEnh_CreateDisplayPanel() end
+        if BagsEnh_CreateCurrencyPanel then BagsEnh_CreateCurrencyPanel() end
         if BagsEnh_CreateCategoriesPanel then BagsEnh_CreateCategoriesPanel() end
         if BagsEnh_CreateOrderPanel then BagsEnh_CreateOrderPanel() end
         BagsEnh_AutoLoadProfile()
         BagsEnh_InstallHooks()
         BagsEnh_ScanNewItems()   -- baseline snapshot, no items flagged
+        if BagsEnh_CacheBags then BagsEnh_CacheBags() end   -- initial cache snapshot
+        if BagsEnh_CacheCurrencies then BagsEnh_CacheCurrencies() end
     elseif event == "BAG_UPDATE" then
         BagsEnh_ScanNewItems()   -- detect new items even while closed
+        if BagsEnh_CacheBags then BagsEnh_CacheBags() end   -- keep the cache fresh
+        if BagsEnh_CacheCurrencies then BagsEnh_CacheCurrencies() end   -- item-currency counts
+        if BagsEnh_RefreshWarehouses then BagsEnh_RefreshWarehouses() end
+        if BagsEnh_IsShown() then MarkDirty() end
+    elseif event == "CURRENCY_DISPLAY_UPDATE" then
+        if BagsEnh_CacheCurrencies then BagsEnh_CacheCurrencies() end
         if BagsEnh_IsShown() then MarkDirty() end
     elseif event == "BANKFRAME_OPENED" then
         if BagsEnh_ShowBank then BagsEnh_ShowBank() end
+        if BagsEnh_CacheBank then BagsEnh_CacheBank() end
     elseif event == "BANKFRAME_CLOSED" then
         if BagsEnh_HideBank then BagsEnh_HideBank() end
-    elseif event == "PLAYERBANKSLOTS_CHANGED" or event == "PLAYERBANKBAGSLOTS_CHANGED"
-        or event == "GUILDBANKBAGSLOTS_CHANGED" then
+    elseif event == "PLAYERBANKSLOTS_CHANGED" or event == "PLAYERBANKBAGSLOTS_CHANGED" then
+        if BagsEnh_CacheBank then BagsEnh_CacheBank() end
+        if BagsEnh_RefreshWarehouses then BagsEnh_RefreshWarehouses() end
+        if BagsEnh_IsBankShown and BagsEnh_IsBankShown() then BagsEnh_RefreshBank() end
+    elseif event == "GUILDBANKBAGSLOTS_CHANGED" then
+        if BagsEnh_CacheGuildStyle then BagsEnh_CacheGuildStyle() end
+        if BagsEnh_RefreshWarehouses then BagsEnh_RefreshWarehouses() end
         if BagsEnh_IsBankShown and BagsEnh_IsBankShown() then BagsEnh_RefreshBank() end
     elseif event == "GUILDBANKFRAME_OPENED" then
         if BagsEnh_ShowGuildBank then BagsEnh_ShowGuildBank() end
@@ -145,6 +161,10 @@ SlashCmdList["BAGSENH"] = function(msg)
         if BagsEnh_IsShown() then BagsEnh_Refresh() end
     elseif msg == "sort" then
         BagsEnh_SortBags()
+    elseif msg == "alts" or msg == "warehouse" or msg == "coffre" then
+        if BagsEnh_OpenWarehouse then BagsEnh_OpenWarehouse() end
+    elseif msg == "clearcache" then
+        if BagsEnh_ClearCache then BagsEnh_ClearCache() end
     elseif msg == "debug" then
         BagsEnh_DebugDump()
     elseif msg == "reset" then

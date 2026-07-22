@@ -14,6 +14,12 @@ local defaults = {
     bankPosX = 260,
     bankPosY = 0,
     hideNativeBank = true, -- stow the default bank / guild bank frames off-screen
+    cache = {},          -- [char] = { bags, bank, money, lastSeen, class, currencies } — cross-char browse
+    showCurrencies = true,   -- watched + pinned currencies next to the gold
+    currencyTotal = true,    -- cross-character total in the currency tooltip
+    currencyOtherChars = true, -- include other characters in that total
+    itemCurrencies = {}, -- [itemID] = true — items pinned as currencies (-> "special" section + footer)
+    currencyShared = {}, -- [currencyKey] = true — account-wide currency (shown once, not summed)
     viewMode = "category", -- "category" (sections) | "onebag" (flat, empty slots shown)
     showItemLevel = true, -- draw the item level on equippable items
     groupUncollected = true, -- Ascension: gear with an unlearned appearance -> its own section
