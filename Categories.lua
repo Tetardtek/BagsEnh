@@ -51,6 +51,11 @@ end
 function BagsEnh_CategoryLabel(key)
     local uc = BagsEnhDB and BagsEnhDB.userCategories
     if uc and uc[key] then return uc[key] end
+    local pi = type(key) == "string" and key:match("^prof(%d+)$")
+    if pi then
+        BuildProfessionOrder()
+        return (profSubName and profSubName[tonumber(pi)]) or key
+    end
     local ld = BagsEnh_L()
     return ld[BagsEnh_CATEGORY_LABELS[key]] or key
 end
@@ -136,6 +141,10 @@ BagsEnh_CATEGORY_COLORS = {
 function BagsEnh_CategoryColor(key)
     local c = BagsEnh_CATEGORY_COLORS[key]
     if c then return c[1], c[2], c[3] end
+    if type(key) == "string" and key:match("^prof%d+$") then
+        local pc = BagsEnh_CATEGORY_COLORS.profession
+        return pc[1], pc[2], pc[3]
+    end
     return BagsEnh_ACCENT[1], BagsEnh_ACCENT[2], BagsEnh_ACCENT[3]
 end
 
@@ -215,6 +224,15 @@ function BagsEnh_GetOrderableCategories()
     local default, valid = {}, {}
     for _, c in ipairs(BagsEnh_CATEGORY_ORDER) do
         if not IsFixed(c) then
+            -- promoted trade-goods subtypes sit just before the profession bucket
+            if c == "profession" then
+                for _, sub in ipairs(BagsEnh_ProfSubtypes()) do
+                    if BagsEnh_IsProfPromoted(sub.index) then
+                        local k = "prof" .. sub.index
+                        if not valid[k] then default[#default + 1] = k; valid[k] = true end
+                    end
+                end
+            end
             default[#default + 1] = c
             valid[c] = true
         end
@@ -268,6 +286,132 @@ function BagsEnh_MoveCategory(cat, delta)
     BagsEnhDB.categoryOrder = order
     if BagsEnh_MarkDirty then BagsEnh_MarkDirty() end
     if BagsEnhFrame and BagsEnhFrame:IsShown() then BagsEnh_Refresh() end
+end
+
+-- ============================================================
+-- Shared sub-grouping engine (used by both the bags and the bank so gear and
+-- trade goods are laid out identically everywhere).
+-- ============================================================
+
+-- Sub-grouping mode for a category (nil = plain flat, no sub-headers).
+-- equipment / appearance are user-configurable; profession is material-only.
+function BagsEnh_GroupingFor(cat)
+    if cat == "equipment" then
+        local g = BagsEnhDB.equipGrouping or "material_slot"
+        return g ~= "none" and g or nil
+    elseif cat == "profession" then
+        return "material"
+    elseif cat == "uncollected" then
+        local g = BagsEnhDB.uncollectedGrouping or "none"
+        return g ~= "none" and g or nil
+    end
+    return nil
+end
+
+-- Curated display order for Trade Goods sub-sections, expressed as positions in
+-- the client's own GetAuctionItemSubClasses(6) list (locale-independent).
+-- Ascension order: 1 Elemental, 2 Cloth, 3 Leather, 4 Metal & Stone, 5 Meat,
+-- 6 Herb, 7 Enchanting, 8 Jewelcrafting, 9 Parts, 10 Devices, 11 Explosives,
+-- 12 Materials, 13 Other, 14 Armor Ench, 15 Weapon Ench.
+-- We show gathering mats first, then per-profession, misc last.
+local TRADEGOODS_ORDER_BY_INDEX = { 6, 4, 3, 2, 5, 1, 7, 8, 9, 10, 11, 14, 15, 12, 13 }
+local professionSubRank        -- [name] = display rank
+local profSubName              -- [clientIndex] = localized name
+local profNameToIndex          -- [name] = clientIndex
+local function BuildProfessionOrder()
+    if professionSubRank or type(GetAuctionItemSubClasses) ~= "function" then return end
+    local subs = { GetAuctionItemSubClasses(6) }
+    if #subs == 0 then return end   -- API not ready yet; retry on the next call
+    local rankByIndex = {}
+    for rank, idx in ipairs(TRADEGOODS_ORDER_BY_INDEX) do rankByIndex[idx] = rank end
+    professionSubRank, profSubName, profNameToIndex = {}, {}, {}
+    for i, name in ipairs(subs) do
+        professionSubRank[name] = rankByIndex[i] or (100 + i)
+        profSubName[i] = name
+        profNameToIndex[name] = i
+    end
+end
+
+-- Trade Goods subtypes in curated display order: { index=clientIndex, name=... }
+function BagsEnh_ProfSubtypes()
+    BuildProfessionOrder()
+    local list = {}
+    if not profSubName then return list end
+    for idx, name in pairs(profSubName) do
+        list[#list + 1] = { index = idx, name = name, rank = professionSubRank[name] or 999 }
+    end
+    table.sort(list, function(a, b) return a.rank < b.rank end)
+    return list
+end
+
+function BagsEnh_IsProfPromoted(index)
+    return BagsEnhDB and BagsEnhDB.promotedProf and BagsEnhDB.promotedProf[index] ~= nil
+end
+
+-- Sort key for a sub-category: profession subtypes get their curated rank so
+-- they order by profession; everything else keeps its name (alphabetical).
+function BagsEnh_SubCatKey(subCat)
+    BuildProfessionOrder()
+    local r = professionSubRank and subCat and professionSubRank[subCat]
+    if r then return string.format("%03d", r) end
+    return "999" .. (subCat or "")
+end
+
+function BagsEnh_CmpMaterialFirst(a, b)
+    local sa, sb = BagsEnh_SubCatKey(a.subCat), BagsEnh_SubCatKey(b.subCat)
+    if sa ~= sb then return sa < sb end
+    local ea = BagsEnh_EQUIPLOC_ORDER[a.equipLoc or ""] or 99
+    local eb = BagsEnh_EQUIPLOC_ORDER[b.equipLoc or ""] or 99
+    if ea ~= eb then return ea < eb end
+    if (a.quality or 0) ~= (b.quality or 0) then return (a.quality or 0) > (b.quality or 0) end
+    return (a.link or "") < (b.link or "")
+end
+
+function BagsEnh_CmpSlotFirst(a, b)
+    local ea = BagsEnh_EQUIPLOC_ORDER[a.equipLoc or ""] or 99
+    local eb = BagsEnh_EQUIPLOC_ORDER[b.equipLoc or ""] or 99
+    if ea ~= eb then return ea < eb end
+    local sa, sb = BagsEnh_SubCatKey(a.subCat), BagsEnh_SubCatKey(b.subCat)
+    if sa ~= sb then return sa < sb end
+    if (a.quality or 0) ~= (b.quality or 0) then return (a.quality or 0) > (b.quality or 0) end
+    return (a.link or "") < (b.link or "")
+end
+
+-- Lays a gear-like section with sub-headers per the grouping mode. Pure of any
+-- frame specifics: the caller supplies place(item, col, y) and header(text,
+-- indent, y) plus geometry. Returns the new running y.
+--   o = { place, header, perRow, yStep, subH }
+function BagsEnh_LayoutGrouped(items, mode, o, y)
+    table.sort(items, mode == "slot" and BagsEnh_CmpSlotFirst or BagsEnh_CmpMaterialFirst)
+    local wantMat = (mode == "material_slot" or mode == "material")
+    local wantSlot = (mode == "material_slot" or mode == "slot")
+    local slotIndent = (mode == "material_slot") and 16 or 4
+    local lastMat, lastSlot, col = nil, nil, 0
+    for _, item in ipairs(items) do
+        if wantMat then
+            local mat = item.subCat or "?"
+            if mat ~= lastMat then
+                if col > 0 then y = y + o.yStep; col = 0 end
+                lastMat, lastSlot = mat, nil
+                o.header("|cffaaaaaa" .. mat .. "|r", 4, y)
+                y = y + o.subH
+            end
+        end
+        if wantSlot then
+            local eloc = item.equipLoc
+            if eloc and BagsEnh_EQUIPLOC_ORDER[eloc] and eloc ~= lastSlot then
+                if col > 0 then y = y + o.yStep; col = 0 end
+                lastSlot = eloc
+                o.header("|cff808080" .. (_G[eloc] or eloc) .. "|r", slotIndent, y)
+                y = y + o.subH
+            end
+        end
+        o.place(item, col, y)
+        col = col + 1
+        if col >= o.perRow then col = 0; y = y + o.yStep end
+    end
+    if col > 0 then y = y + o.yStep end
+    return y
 end
 
 -- Equipment slot display order (head → trinket, weapons last)
@@ -364,6 +508,15 @@ function BagsEnh_Categorize(link)
         -- profession → Leather / Cloth / Herb / Cooking / Metal & Stone / ...
         if (category == "equipment" or category == "profession") and itemSubType then
             subCat = itemSubType
+        end
+        -- Promote a trade-goods subtype to its own top-level category if enabled
+        -- (cached; the options toggle invalidates the cache).
+        if category == "profession" and subCat and BagsEnhDB.promotedProf then
+            BuildProfessionOrder()
+            local idx = profNameToIndex and profNameToIndex[subCat]
+            if idx and BagsEnhDB.promotedProf[idx] then
+                category = "prof" .. idx
+            end
         end
         equipLoc = eLoc
         baseCat = category

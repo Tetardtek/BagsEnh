@@ -35,6 +35,7 @@ dependencies**. Part of the **Enh** series (sister addon of
   hunting tab by tab
 - **Search**, plus full interaction: click to pick up / withdraw, right-click to
   withdraw a stack, drop an item on the window to deposit
+- **Resizable** (drag the grip), same sub-grouping as the bags
 - The default bank window is hidden while BagsEnh drives it (toggle in Display)
 
 ### Smart categories
@@ -48,6 +49,8 @@ dependencies**. Part of the **Enh** series (sister addon of
 - **Configurable gear grouping**: sub-group equipment (and the appearance
   section) by *material + slot*, *material*, *slot*, or *none* — line up all
   your gloves, or keep it compact, your call
+- **Promote trade goods**: give any material (Herbs, Ore, Leather, Cloth,
+  Enchanting mats…) its own top-level section, ordered by profession
 - **Sub-categories** from the client's own item data (localized):
   - Equipment → weapon type / armor material, sorted by equip slot
   - Profession & Trade → Leather / Cloth / Herb / Cooking / Metal & Stone…
@@ -105,8 +108,9 @@ dependencies**. Part of the **Enh** series (sister addon of
 - **BagsEnh** — unified view toggle, window scale, items per row, icon size,
   icon spacing, profiles (save/load/export/import)
 - **Display** — item level on gear, group unlearned appearances, hide the
-  default bank window, and how equipment / the appearance section are
-  sub-grouped (material + slot, material, slot, or none)
+  default bank window, how equipment / the appearance section are sub-grouped
+  (material + slot, material, slot, or none), and which trade goods get promoted
+  to their own category
 - **Custom Categories** — create/rename/delete your own categories, plus
   name-pattern rules
 - **Section Order** — reorder categories

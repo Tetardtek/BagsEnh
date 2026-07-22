@@ -608,79 +608,18 @@ function BagsEnh_Refresh()
         btn:Show()
     end
 
-    -- Sub-grouping mode for a category (nil = plain flat, no sub-headers).
-    -- equipment/appearance are user-configurable; profession is material-only.
-    local function GroupingFor(cat)
-        if cat == "equipment" then
-            local g = BagsEnhDB.equipGrouping or "material_slot"
-            return g ~= "none" and g or nil
-        elseif cat == "profession" then
-            return "material"
-        elseif cat == "uncollected" then
-            local g = BagsEnhDB.uncollectedGrouping or "none"
-            return g ~= "none" and g or nil
-        end
-        return nil
-    end
-
-    local function CmpMaterialFirst(a, b)
-        local sa, sb = a.subCat or "?", b.subCat or "?"
-        if sa ~= sb then return sa < sb end
-        local ea = BagsEnh_EQUIPLOC_ORDER[a.equipLoc or ""] or 99
-        local eb = BagsEnh_EQUIPLOC_ORDER[b.equipLoc or ""] or 99
-        if ea ~= eb then return ea < eb end
-        if (a.quality or 0) ~= (b.quality or 0) then return (a.quality or 0) > (b.quality or 0) end
-        return (a.link or "") < (b.link or "")
-    end
-    local function CmpSlotFirst(a, b)
-        local ea = BagsEnh_EQUIPLOC_ORDER[a.equipLoc or ""] or 99
-        local eb = BagsEnh_EQUIPLOC_ORDER[b.equipLoc or ""] or 99
-        if ea ~= eb then return ea < eb end
-        local sa, sb = a.subCat or "?", b.subCat or "?"
-        if sa ~= sb then return sa < sb end
-        if (a.quality or 0) ~= (b.quality or 0) then return (a.quality or 0) > (b.quality or 0) end
-        return (a.link or "") < (b.link or "")
-    end
-
-    -- Lays out a gear-like section with sub-headers per the grouping mode.
-    -- Returns the new running y.
+    -- Bags adapter over the shared grouping engine (see BagsEnh_LayoutGrouped).
     local function RenderGrouped(items, mode, x0, y)
-        table.sort(items, mode == "slot" and CmpSlotFirst or CmpMaterialFirst)
-        local wantMat = (mode == "material_slot" or mode == "material")
-        local wantSlot = (mode == "material_slot" or mode == "slot")
-        local slotIndent = (mode == "material_slot") and 16 or 4
-        local lastMat, lastSlot, col = nil, nil, 0
-        for _, item in ipairs(items) do
-            if wantMat then
-                local mat = item.subCat or "?"
-                if mat ~= lastMat then
-                    if col > 0 then y = y + yStep; col = 0 end
-                    lastMat = mat; lastSlot = nil
-                    local sh = AcquireHeader()
-                    sh:ClearAllPoints()
-                    sh:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", x0 + 4, -y)
-                    sh:SetText("|cffaaaaaa" .. mat .. "|r")
-                    y = y + SUBHEADER_H
-                end
-            end
-            if wantSlot then
-                local eloc = item.equipLoc
-                if eloc and BagsEnh_EQUIPLOC_ORDER[eloc] and eloc ~= lastSlot then
-                    if col > 0 then y = y + yStep; col = 0 end
-                    lastSlot = eloc
-                    local sh2 = AcquireHeader()
-                    sh2:ClearAllPoints()
-                    sh2:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", x0 + slotIndent, -y)
-                    sh2:SetText("|cff808080" .. (_G[eloc] or eloc) .. "|r")
-                    y = y + SUBHEADER_H
-                end
-            end
-            PlaceButton(item, x0, col, y)
-            col = col + 1
-            if col >= perRow then col = 0; y = y + yStep end
-        end
-        if col > 0 then y = y + yStep end
-        return y
+        return BagsEnh_LayoutGrouped(items, mode, {
+            perRow = perRow, yStep = yStep, subH = SUBHEADER_H,
+            place = function(item, col, yy) PlaceButton(item, x0, col, yy) end,
+            header = function(text, indent, yy)
+                local sh = AcquireHeader()
+                sh:ClearAllPoints()
+                sh:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", x0 + indent, -yy)
+                sh:SetText(text)
+            end,
+        }, y)
     end
 
     local totalH = 0
@@ -737,7 +676,7 @@ function BagsEnh_Refresh()
             if collapsed then
                 -- header only
             else
-                local grouping = GroupingFor(cat)
+                local grouping = BagsEnh_GroupingFor(cat)
                 if grouping then
                     y = RenderGrouped(items, grouping, x0, y)
                 else

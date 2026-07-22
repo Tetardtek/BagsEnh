@@ -107,11 +107,55 @@ function BagsEnh_CreateDisplayPanel()
     MakeGroupingDD("equipGrouping", ld.OPT_EQUIP_GROUPING, -200)
     MakeGroupingDD("uncollectedGrouping", ld.OPT_UNCOLLECTED_GROUPING, -234)
 
+    -- ============================================================
+    -- Promote trade goods to their own top-level categories
+    -- ============================================================
+    local s3 = P:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    s3:SetPoint("TOPLEFT", 16, -274)
+    s3:SetText("|cff00ccff" .. ld.DISP_PROMOTE .. "|r")
+
+    local phint = P:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    phint:SetPoint("TOPLEFT", 16, -294)
+    phint:SetWidth(450)
+    phint:SetJustifyH("LEFT")
+    phint:SetText(ld.DISP_PROMOTE_HINT)
+
+    -- The subtype list comes from the client at runtime, so the checkboxes are
+    -- built lazily (once the auction classes are available).
+    local promoChecks, promoBuilt = {}, false
+    local function BuildPromoChecks()
+        if promoBuilt then return end
+        local subs = BagsEnh_ProfSubtypes()
+        if #subs == 0 then return end
+        promoBuilt = true
+        local cols = 3
+        for i, sub in ipairs(subs) do
+            local col = (i - 1) % cols
+            local row = math.floor((i - 1) / cols)
+            local cb = CreateFrame("CheckButton", "BagsEnhProm" .. sub.index, P, "InterfaceOptionsCheckButtonTemplate")
+            cb:SetPoint("TOPLEFT", 16 + col * 150, -320 - row * 26)
+            _G[cb:GetName() .. "Text"]:SetText(sub.name)
+            cb.profIndex = sub.index
+            cb:SetScript("OnClick", function(self)
+                BagsEnhDB.promotedProf = BagsEnhDB.promotedProf or {}
+                BagsEnhDB.promotedProf[self.profIndex] = self:GetChecked() and true or nil
+                BagsEnh_InvalidateCategoryCache()
+                if BagsEnhFrame and BagsEnhFrame:IsShown() then BagsEnh_Refresh() end
+                if BagsEnh_IsBankShown and BagsEnh_IsBankShown() then BagsEnh_RefreshBank() end
+            end)
+            promoChecks[#promoChecks + 1] = cb
+        end
+    end
+
     P:SetScript("OnShow", function()
         cbIlvl:SetChecked(BagsEnhDB.showItemLevel)
         cbUncollected:SetChecked(BagsEnhDB.groupUncollected)
         cbHideBank:SetChecked(BagsEnhDB.hideNativeBank)
         for _, r in ipairs(refreshers) do r() end
+        BuildPromoChecks()
+        for _, cb in ipairs(promoChecks) do
+            cb:SetChecked(BagsEnhDB.promotedProf and BagsEnhDB.promotedProf[cb.profIndex])
+        end
     end)
 
     InterfaceOptions_AddCategory(P)

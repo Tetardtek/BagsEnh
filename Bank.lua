@@ -11,6 +11,7 @@
 
 local PADDING = 10
 local HEADER_H = 18
+local SUBHEADER_H = 15
 
 local bankFrame
 local bankMode = "character"   -- character | guild | personal | realm
@@ -22,6 +23,7 @@ local bankParents = {}         -- [container] = hidden parent (character bank on
 local cPool, cActive = {}, {}
 local rPool, rActive = {}, {}
 local headerPool, headerActive = {}, {}
+local subHeaderPool, subHeaderActive = {}, {}
 
 BagsEnh_bankSearch = ""
 
@@ -138,6 +140,20 @@ local function ReleaseAll()
     rActive = {}
     for _, h in ipairs(headerActive) do h:Hide(); table.insert(headerPool, h) end
     headerActive = {}
+    for _, h in ipairs(subHeaderActive) do h:Hide(); table.insert(subHeaderPool, h) end
+    subHeaderActive = {}
+end
+
+-- Plain sub-header (material / slot line) for the shared grouping engine.
+local function AcquireSubHeader()
+    local h = table.remove(subHeaderPool)
+    if not h then
+        h = bankFrame.content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        h:SetJustifyH("LEFT")
+    end
+    h:Show()
+    subHeaderActive[#subHeaderActive + 1] = h
+    return h
 end
 
 local function AcquireHeader()
@@ -277,16 +293,6 @@ function BagsEnh_RefreshBank()
         local items = groups[cat]
         if cat == "hidden" and not BagsEnhDB.showHidden then items = nil end
         if items and #items > 0 then
-            table.sort(items, function(a, b)
-                local sa, sb = a.subCat or "?", b.subCat or "?"
-                if sa ~= sb then return sa < sb end
-                local ea = BagsEnh_EQUIPLOC_ORDER[a.equipLoc or ""] or 99
-                local eb = BagsEnh_EQUIPLOC_ORDER[b.equipLoc or ""] or 99
-                if ea ~= eb then return ea < eb end
-                if (a.quality or 0) ~= (b.quality or 0) then return (a.quality or 0) > (b.quality or 0) end
-                return (a.link or "") < (b.link or "")
-            end)
-
             local header = AcquireHeader()
             header:ClearAllPoints()
             header:SetPoint("TOPLEFT", bankFrame.content, "TOPLEFT", 0, -y)
@@ -297,13 +303,30 @@ function BagsEnh_RefreshBank()
                 BagsEnh_ColorHex(cr, cg, cb), BagsEnh_CategoryLabel(cat), #items))
             y = y + HEADER_H
 
-            local col = 0
-            for _, it in ipairs(items) do
-                PlaceButton(it, col, y)
-                col = col + 1
-                if col >= perRow then col = 0; y = y + yStep end
+            -- Same grouping engine as the bags (material -> slot sub-headers,
+            -- honouring the Display panel modes).
+            local grouping = BagsEnh_GroupingFor(cat)
+            if grouping then
+                y = BagsEnh_LayoutGrouped(items, grouping, {
+                    perRow = perRow, yStep = yStep, subH = SUBHEADER_H,
+                    place = function(it, col, yy) PlaceButton(it, col, yy) end,
+                    header = function(text, indent, yy)
+                        local sh = AcquireSubHeader()
+                        sh:ClearAllPoints()
+                        sh:SetPoint("TOPLEFT", bankFrame.content, "TOPLEFT", indent, -yy)
+                        sh:SetText(text)
+                    end,
+                }, y)
+            else
+                table.sort(items, BagsEnh_CmpMaterialFirst)
+                local col = 0
+                for _, it in ipairs(items) do
+                    PlaceButton(it, col, y)
+                    col = col + 1
+                    if col >= perRow then col = 0; y = y + yStep end
+                end
+                if col > 0 then y = y + yStep end
             end
-            if col > 0 then y = y + yStep end
             y = y + SECTION_GAP
         end
     end
@@ -395,6 +418,8 @@ local function CreateBankFrame()
     bankFrame:SetBackdropColor(0.055, 0.075, 0.09, 0.94)
     bankFrame:SetBackdropBorderColor(ac[1], ac[2], ac[3], 0.55)
     bankFrame:SetMovable(true); bankFrame:EnableMouse(true)
+    bankFrame:SetResizable(true)
+    if bankFrame.SetMinResize then bankFrame:SetMinResize(240, 220) end
     bankFrame:RegisterForDrag("LeftButton")
     bankFrame:SetScript("OnDragStart", bankFrame.StartMoving)
     bankFrame:SetScript("OnDragStop", function(s)
@@ -459,6 +484,24 @@ local function CreateBankFrame()
         p:SetID(c); p:SetAllPoints(bankFrame.content)
         bankParents[c] = p
     end
+
+    -- Resize handle (bottom-right) — more width = more columns, like the bags
+    local grip = CreateFrame("Button", nil, bankFrame)
+    grip:SetSize(16, 16)
+    grip:SetPoint("BOTTOMRIGHT", -4, 4)
+    grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    grip:SetScript("OnMouseDown", function() bankFrame:StartSizing("BOTTOMRIGHT") end)
+    grip:SetScript("OnMouseUp", function()
+        bankFrame:StopMovingOrSizing()
+        BagsEnhDB.bankWidth = bankFrame:GetWidth()
+        BagsEnhDB.bankHeight = bankFrame:GetHeight()
+        BagsEnh_RefreshBank()
+    end)
+    bankFrame:SetScript("OnSizeChanged", function()
+        if bankFrame:IsShown() then BagsEnh_RefreshBank() end
+    end)
 
     -- Drop an item onto the window to deposit it (no empty slots are shown, so
     -- this is how you put things in).

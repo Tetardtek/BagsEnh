@@ -19,6 +19,7 @@ local defaults = {
     groupUncollected = true, -- Ascension: gear with an unlearned appearance -> its own section
     equipGrouping = "material_slot", -- equipment sub-grouping: material_slot | material | slot | none
     uncollectedGrouping = "none",    -- "unlearned appearance" sub-grouping (flat by default)
+    promotedProf = {},   -- [tradeGoodsSubclassIndex] = true -> its own top-level category
     collapsed = {},      -- [categoryKey] = true when section is collapsed
     userCategories = {}, -- [userKey] = display name (user-created sections)
     userCatSeq = 0,      -- monotonic counter for unique user category keys

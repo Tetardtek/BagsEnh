@@ -86,7 +86,7 @@ end
 BagsEnh_PROFILE_KEYS = {
     "scale", "columns", "iconSize", "spacing", "width", "height", "enabled", "showHidden",
     "viewMode", "showItemLevel", "groupUncollected",
-    "equipGrouping", "uncollectedGrouping",
+    "equipGrouping", "uncollectedGrouping", "promotedProf",
     "itemOverrides", "customRules", "collapsed", "categoryOrder",
     "userCategories", "userCatSeq",
 }
