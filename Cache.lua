@@ -15,6 +15,13 @@ function BagsEnh_CharKey()
     return name .. " - " .. realm
 end
 
+-- Realm (serveur) extrait d'une clé perso « Nom - Realm ». La realm bank est
+-- commune à tout le compte sur un même serveur : on l'indexe par realm, pas
+-- par perso, pour qu'aucun serveur n'entre en conflit avec un autre.
+function BagsEnh_RealmOf(charKey)
+    return (charKey and charKey:match(" %- (.+)$")) or (GetRealmName() or "?")
+end
+
 local function ScanContainers(containers)
     local items = {}
     for _, c in ipairs(containers) do
@@ -78,7 +85,14 @@ function BagsEnh_CacheGuildStyle()
     end
 
     local e = Entry()
-    e[mode] = items
+    if mode == "realmbank" then
+        -- Realm bank = partagée par tout le compte sur ce serveur → un seul
+        -- exemplaire par realm, visible de tous les persos (cf. /be alts).
+        BagsEnhDB.realmbanks = BagsEnhDB.realmbanks or {}
+        BagsEnhDB.realmbanks[GetRealmName() or "?"] = { items = items, lastSeen = time() }
+    else
+        e[mode] = items
+    end
     e.lastSeen = time()
 end
 
@@ -110,4 +124,44 @@ end
 function BagsEnh_ClearCache()
     BagsEnhDB.cache = {}
     DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. (BagsEnh_L().WH_CACHE_CLEARED or "cache cleared."))
+end
+
+-- Remove a single character's cached snapshot (obsolete alt cleanup).
+function BagsEnh_DeleteCachedChar(key)
+    if key and BagsEnhDB.cache and BagsEnhDB.cache[key] then
+        BagsEnhDB.cache[key] = nil
+        return true
+    end
+    return false
+end
+
+-- Last time this character's cache was refreshed (epoch seconds), or nil.
+function BagsEnh_CharLastSeen(key)
+    local e = BagsEnh_GetCache(key)
+    return e and e.lastSeen or nil
+end
+
+-- Realm bank partagée du serveur `realm` (ou du realm courant), ou nil.
+function BagsEnh_GetRealmBank(realm)
+    realm = realm or (GetRealmName() or "?")
+    return BagsEnhDB.realmbanks and BagsEnhDB.realmbanks[realm] or nil
+end
+
+-- Migration : avant la v2.3, la realm bank était stockée par perso
+-- (cache[key].realmbank), donc dupliquée. On la regroupe une fois par serveur
+-- en gardant le snapshot le plus récent, puis on nettoie les copies par perso.
+function BagsEnh_MigrateRealmBanks()
+    if not BagsEnhDB or not BagsEnhDB.cache then return end
+    BagsEnhDB.realmbanks = BagsEnhDB.realmbanks or {}
+    for key, e in pairs(BagsEnhDB.cache) do
+        if type(e) == "table" and e.realmbank then
+            local realm = BagsEnh_RealmOf(key)
+            local cur = BagsEnhDB.realmbanks[realm]
+            local ts = e.lastSeen or 0
+            if not cur or (cur.lastSeen or 0) < ts then
+                BagsEnhDB.realmbanks[realm] = { items = e.realmbank, lastSeen = ts }
+            end
+            e.realmbank = nil
+        end
+    end
 end

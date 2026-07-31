@@ -77,14 +77,15 @@ local function AcquireButton(bag)
             icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
             icon:SetAllPoints(btn)  -- icon follows button size (icon-size slider)
         end
-        -- The slot frame (NormalTexture) has a fixed native size; anchor it
-        -- to the button so it shrinks too — otherwise it overlaps neighbours
-        -- when icons are made smaller.
+        -- Cadre de slot (NormalTexture) : la vue unifiée n'affiche que des
+        -- slots OCCUPÉS ; le cadre métallique natif débordait alors par-dessus
+        -- l'icône (contour disgracieux et peu lisible). On le retire — la
+        -- bordure de qualité (beBorder, ci-dessous) suffit à délimiter chaque
+        -- item.
         local nt = btn:GetNormalTexture()
         if nt then
-            nt:ClearAllPoints()
-            nt:SetPoint("TOPLEFT", btn, "TOPLEFT", -3, 3)
-            nt:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", 3, -3)
+            nt:SetTexture(nil)
+            nt:Hide()
         end
         btn.beBorder = BagsEnh_CreateIconBorder(btn, icon or btn)
 
@@ -168,12 +169,39 @@ local function AcquireButton(bag)
     return btn
 end
 
--- Sub-header (weapon type / material / profession line) — plain text
+-- Clé stable d'une sous-section (catégorie + matériau + emplacement).
+local function SubKey(cat, desc)
+    if not desc then return nil end
+    return (cat or "?") .. "\1" .. (desc.sub or "") .. "\1" .. (desc.slot or "")
+end
+
+-- Sub-header (weapon type / material / profession line) — bouton cliquable :
+-- modificateur+clic déclenche l'action groupée (F1) sur cette SOUS-section ;
+-- clic simple replie / déploie la sous-section.
 local function AcquireHeader()
     local h = table.remove(headerPool)
     if not h then
-        h = mainFrame.content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        h:SetJustifyH("LEFT")
+        h = CreateFrame("Button", nil, mainFrame.content)
+        h:SetHeight(15)
+        h:RegisterForClicks("LeftButtonUp")
+        h.label = h:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        h.label:SetPoint("LEFT", 0, 0)
+        h.label:SetJustifyH("LEFT")
+        h:SetScript("OnClick", function(self)
+            if not self.beAct then return end
+            if BagsEnh_ActionModifierDown and BagsEnh_ActionModifierDown()
+                    and BagsEnh_SectionAction then
+                BagsEnh_SectionAction(self.beAct.cat, self.beAct.desc)
+                return
+            end
+            -- clic simple : replie / déploie la sous-section
+            local key = SubKey(self.beAct.cat, self.beAct.desc)
+            if key then
+                BagsEnhDB.collapsedSub = BagsEnhDB.collapsedSub or {}
+                BagsEnhDB.collapsedSub[key] = (not BagsEnhDB.collapsedSub[key]) or nil
+                BagsEnh_Refresh()
+            end
+        end)
     end
     h:Show()
     activeHeaders[#activeHeaders + 1] = h
@@ -197,6 +225,14 @@ local function AcquireCatHeader(catKey)
         b.label:SetPoint("LEFT", 23, 0)
         b.label:SetJustifyH("LEFT")
         b:SetScript("OnClick", function(self)
+            -- Ctrl+clic : action groupée contextuelle sur la section (F1) —
+            -- marchand ouvert = vend, banque ouverte = dépose. Sinon on garde
+            -- le comportement normal (repli / déploiement de la section).
+            if BagsEnh_ActionModifierDown and BagsEnh_ActionModifierDown()
+                    and BagsEnh_SectionAction then
+                BagsEnh_SectionAction(self.catKey)
+                return
+            end
             BagsEnhDB.collapsed = BagsEnhDB.collapsed or {}
             BagsEnhDB.collapsed[self.catKey] = not BagsEnhDB.collapsed[self.catKey]
             BagsEnh_Refresh()
@@ -691,15 +727,23 @@ function BagsEnh_Refresh()
     end
 
     -- Bags adapter over the shared grouping engine (see BagsEnh_LayoutGrouped).
-    local function RenderGrouped(items, mode, x0, y)
+    local function RenderGrouped(items, mode, x0, y, cat)
         return BagsEnh_LayoutGrouped(items, mode, {
             perRow = perRow, yStep = yStep, subH = SUBHEADER_H,
             place = function(item, col, yy) PlaceButton(item, x0, col, yy) end,
-            header = function(text, indent, yy)
+            header = function(text, indent, yy, desc)
                 local sh = AcquireHeader()
                 sh:ClearAllPoints()
                 sh:SetPoint("TOPLEFT", mainFrame.content, "TOPLEFT", x0 + indent, -yy)
-                sh:SetText(text)
+                sh:SetHeight(SUBHEADER_H)
+                sh:SetWidth(math.max(20, sectionW - indent))
+                local coll = BagsEnhDB.collapsedSub and BagsEnhDB.collapsedSub[SubKey(cat, desc)]
+                sh.label:SetText((coll and "|cff888888>|r " or "") .. text)
+                -- Cible de l'action groupée : catégorie + sous-groupe (F1).
+                sh.beAct = { cat = cat, desc = desc }
+            end,
+            collapsed = function(desc)
+                return BagsEnhDB.collapsedSub and BagsEnhDB.collapsedSub[SubKey(cat, desc)]
             end,
         }, y)
     end
@@ -760,7 +804,7 @@ function BagsEnh_Refresh()
             else
                 local grouping = BagsEnh_GroupingFor(cat)
                 if grouping then
-                    y = RenderGrouped(items, grouping, x0, y)
+                    y = RenderGrouped(items, grouping, x0, y, cat)
                 else
                     local col = 0
                     for _, item in ipairs(items) do

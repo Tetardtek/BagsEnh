@@ -5,6 +5,41 @@ All notable changes to BagsEnh are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-07-31
+
+### Added
+- **Contextual group actions (modifier + click)** — hold the modifier and click a
+  section **or sub-section** header to act on the whole group, depending on the
+  window open next to your bags: **sell** at a merchant, **deposit** at the
+  character bank. Only items with a vendor value are ever sold (quest/no-value
+  items are protected). The modifier key (**Ctrl / Alt / Shift**) is configurable
+  in the Display options panel.
+- **Collapsible sub-sections** — click a sub-section header (material / equip
+  slot) to fold or unfold it; a collapsed material also hides its slot lines.
+- **Stack compaction** — a **Compact** button in the character bank (and the
+  `/be merge` command) merges partial stacks of the same item up to their max,
+  freeing slots. Throttled and combat-safe (defensive state machine, no taint).
+- **Shared realm bank** — the realm bank is now stored **once per server** and
+  visible from **every character** of that realm via `/be alts`, even ones that
+  never opened it. No more per-character duplication, and no cross-server mix.
+- **Cached-character management** — remove obsolete alts from the cross-character
+  cache: a quick **Remove** button (with confirmation) in the warehouse, plus a
+  full list with per-character delete and **Clear all** in a new **Cached
+  characters** options panel.
+- **Version check** — the addon announces its version over guild/party; if a
+  newer version is seen in play, you are pointed to the GitHub page once.
+  `/be version` prints your version and the repository link.
+- **Bank free-slot counter** — the character bank footer now shows free slots
+  (`used/total (N free)`).
+
+### Changed
+- **Cleaner item icons** — the native slot frame that overlapped item icons has
+  been removed; the quality-coloured border delimits each item on its own.
+
+### Migration
+- Existing per-character realm-bank snapshots are merged once into the new
+  shared-per-server store on first load.
+
 ## [2.2.0] - 2026-07-22
 
 ### Added

@@ -15,6 +15,7 @@ local defaults = {
     bankPosY = 0,
     hideNativeBank = true, -- stow the default bank / guild bank frames off-screen
     cache = {},          -- [char] = { bags, bank, money, lastSeen, class, currencies } — cross-char browse
+    realmbanks = {},     -- [realm] = { items, lastSeen } — realm bank partagée par serveur (F4)
     showCurrencies = true,   -- watched + pinned currencies next to the gold
     currencyTotal = true,    -- cross-character total in the currency tooltip
     currencyOtherChars = true, -- include other characters in that total
@@ -27,6 +28,7 @@ local defaults = {
     uncollectedGrouping = "none",    -- "unlearned appearance" sub-grouping (flat by default)
     promotedProf = {},   -- [tradeGoodsSubclassIndex] = true -> its own top-level category
     collapsed = {},      -- [categoryKey] = true when section is collapsed
+    collapsedSub = {},   -- [cat\1sub\1slot] = true when a SUB-section is collapsed (F1)
     userCategories = {}, -- [userKey] = display name (user-created sections)
     userCatSeq = 0,      -- monotonic counter for unique user category keys
     customRules = {},    -- name pattern -> category key (panel UI, v1.1)
@@ -34,6 +36,7 @@ local defaults = {
     showHidden = false,  -- reveal the "hidden" section
     profiles = {},       -- [name] = settings snapshot
     charProfiles = {},   -- [char-realm] = profile name (auto-load)
+    actionModifier = "ctrl", -- touche des actions groupées de section : ctrl | alt | shift (F1)
 }
 
 function BagsEnh_DeepCopy(t)

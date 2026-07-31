@@ -107,6 +107,39 @@ function BagsEnh_CreateDisplayPanel()
     MakeGroupingDD("equipGrouping", ld.OPT_EQUIP_GROUPING, -200)
     MakeGroupingDD("uncollectedGrouping", ld.OPT_UNCOLLECTED_GROUPING, -234)
 
+    -- Raccourci des actions groupées de section (F1) — colonne de droite de la
+    -- zone Contenu pour ne pas bousculer la mise en page verticale.
+    local amLbl = P:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    amLbl:SetPoint("TOPLEFT", 300, -60)
+    amLbl:SetText(ld.OPT_ACTION_MOD)
+    local MODS = { { key = "ctrl", label = ld.MOD_CTRL },
+                   { key = "alt", label = ld.MOD_ALT },
+                   { key = "shift", label = ld.MOD_SHIFT } }
+    local function ModLabel(k)
+        for _, o in ipairs(MODS) do if o.key == k then return o.label end end
+        return k
+    end
+    local amDD = CreateFrame("Frame", "BagsEnhDispActionMod", P, "UIDropDownMenuTemplate")
+    amDD:SetPoint("TOPLEFT", 290, -80)
+    UIDropDownMenu_SetWidth(amDD, 110)
+    UIDropDownMenu_Initialize(amDD, function()
+        local info = UIDropDownMenu_CreateInfo()
+        for _, o in ipairs(MODS) do
+            info.text = o.label
+            info.checked = ((BagsEnhDB.actionModifier or "ctrl") == o.key)
+            info.func = function()
+                BagsEnhDB.actionModifier = o.key
+                UIDropDownMenu_SetText(amDD, o.label)
+                CloseDropDownMenus()
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+    UIDropDownMenu_SetText(amDD, ModLabel(BagsEnhDB.actionModifier or "ctrl"))
+    refreshers[#refreshers + 1] = function()
+        UIDropDownMenu_SetText(amDD, ModLabel(BagsEnhDB.actionModifier or "ctrl"))
+    end
+
     -- ============================================================
     -- Promote trade goods to their own top-level categories
     -- ============================================================

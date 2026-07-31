@@ -393,28 +393,38 @@ function BagsEnh_LayoutGrouped(items, mode, o, y)
     local wantSlot = (mode == "material_slot" or mode == "slot")
     local slotIndent = (mode == "material_slot") and 16 or 4
     local lastMat, lastSlot, col = nil, nil, 0
+    -- Sous-sections repliables (F1) : o.collapsed(desc) -> true pour cacher les
+    -- items d'un sous-groupe (matériau replié cache aussi ses sous-en-têtes de
+    -- slot). Callback optionnel : le Warehouse ne le fournit pas.
+    local matCollapsed, slotCollapsed = false, false
     for _, item in ipairs(items) do
         if wantMat then
             local mat = item.subCat or "?"
             if mat ~= lastMat then
                 if col > 0 then y = y + o.yStep; col = 0 end
                 lastMat, lastSlot = mat, nil
-                o.header("|cffaaaaaa" .. mat .. "|r", 4, y)
+                o.header("|cffaaaaaa" .. mat .. "|r", 4, y, { sub = mat })
                 y = y + o.subH
+                matCollapsed = (o.collapsed and o.collapsed({ sub = mat })) or false
+                slotCollapsed = false
             end
         end
-        if wantSlot then
+        if not matCollapsed and wantSlot then
             local eloc = item.equipLoc
             if eloc and BagsEnh_EQUIPLOC_ORDER[eloc] and eloc ~= lastSlot then
                 if col > 0 then y = y + o.yStep; col = 0 end
                 lastSlot = eloc
-                o.header("|cff808080" .. (_G[eloc] or eloc) .. "|r", slotIndent, y)
+                local d = { slot = eloc, sub = wantMat and lastMat or nil }
+                o.header("|cff808080" .. (_G[eloc] or eloc) .. "|r", slotIndent, y, d)
                 y = y + o.subH
+                slotCollapsed = (o.collapsed and o.collapsed(d)) or false
             end
         end
-        o.place(item, col, y)
-        col = col + 1
-        if col >= o.perRow then col = 0; y = y + o.yStep end
+        if not matCollapsed and not slotCollapsed then
+            o.place(item, col, y)
+            col = col + 1
+            if col >= o.perRow then col = 0; y = y + o.yStep end
+        end
     end
     if col > 0 then y = y + o.yStep end
     return y

@@ -67,11 +67,12 @@ local function AcquireContainerButton(container)
         btn:SetSize(37, 37)
         local icon = _G[btn:GetName() .. "IconTexture"]
         if icon then icon:SetTexCoord(0.07, 0.93, 0.07, 0.93); icon:SetAllPoints(btn) end
+        -- Cadre de slot natif retiré (cf. Frames.lua) : il débordait par-dessus
+        -- l'icône. La bordure de qualité (beBorder) délimite l'item.
         local nt = btn:GetNormalTexture()
         if nt then
-            nt:ClearAllPoints()
-            nt:SetPoint("TOPLEFT", btn, "TOPLEFT", -3, 3)
-            nt:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", 3, -3)
+            nt:SetTexture(nil)
+            nt:Hide()
         end
         btn.beBorder = BagsEnh_CreateIconBorder(btn, icon or btn)
         local ilvl = btn:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
@@ -346,7 +347,9 @@ function BagsEnh_RefreshBank()
     if IsGuildStyle() then
         bankFrame.slots:SetText(ld.BANK_ITEMS:format(used))
     else
-        bankFrame.slots:SetText(ld.SLOTS:format(used, total))
+        -- Banque perso : total et used sont réels → on affiche aussi les
+        -- emplacements libres (demande retour joueur).
+        bankFrame.slots:SetText(ld.BANK_SLOTS_FREE:format(used, total, total - used))
     end
 
     if unresolved and C_Timer and C_Timer.After then
@@ -471,6 +474,20 @@ local function CreateBankFrame()
 
     bankFrame.slots = bankFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     bankFrame.slots:SetPoint("BOTTOMLEFT", PADDING, PADDING - 2)
+
+    -- Compacter les piles partielles (F7) — banque du personnage uniquement
+    -- (les banques guilde/royaume passent par une autre API de déplacement).
+    bankFrame.compact = CreateFrame("Button", nil, bankFrame, "UIPanelButtonTemplate")
+    bankFrame.compact:SetSize(84, 20)
+    bankFrame.compact:SetPoint("BOTTOMRIGHT", -24, PADDING - 4)
+    bankFrame.compact:SetText(ld.MERGE_BTN)
+    bankFrame.compact:SetScript("OnClick", function()
+        if IsGuildStyle() then
+            DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. ld.MERGE_BANK_GUILD)
+            return
+        end
+        if BagsEnh_MergeBankStacks then BagsEnh_MergeBankStacks() end
+    end)
 
     local scroll = CreateFrame("ScrollFrame", "BagsEnhBankScroll", bankFrame)
     scroll:SetPoint("TOPLEFT", PADDING, -30); scroll:SetPoint("BOTTOMRIGHT", -PADDING, 24)

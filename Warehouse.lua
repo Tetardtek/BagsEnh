@@ -98,7 +98,13 @@ local function Refresh(v)
     ReleaseAll(v)
 
     local c = BagsEnh_GetCache(v.char)
-    local rawItems = c and c[v.container] or {}
+    local rawItems
+    if v.container == "realmbank" then          -- store partagé par serveur (F4)
+        local rb = BagsEnh_GetRealmBank(BagsEnh_RealmOf(v.char))
+        rawItems = rb and rb.items or {}
+    else
+        rawItems = c and c[v.container] or {}
+    end
     local unresolved = false
 
     local groups, count = {}, 0
@@ -229,9 +235,15 @@ end
 local function AvailableContainers(charKey)
     local e = BagsEnh_GetCache(charKey)
     local list = {}
-    if e then
-        for _, k in ipairs(CONTAINER_ORDER) do
-            if e[k] then list[#list + 1] = k end
+    for _, k in ipairs(CONTAINER_ORDER) do
+        if k == "realmbank" then
+            -- Realm bank : store partagé par serveur → visible de TOUS les
+            -- persos du realm, même ceux qui ne l'ont pas ouverte eux-mêmes.
+            if BagsEnh_GetRealmBank(BagsEnh_RealmOf(charKey)) then
+                list[#list + 1] = k
+            end
+        elseif e and e[k] then
+            list[#list + 1] = k
         end
     end
     return list
@@ -289,6 +301,33 @@ local function SetupCharDD(v)
         end
     end)
     UIDropDownMenu_SetText(dd, CharDisplay(v.char))
+end
+
+-- Suppression d'un perso du coffre + rafraîchissement du viewer courant.
+local function DeleteCharFromViewer(v, key)
+    if not (v and key) then return end
+    BagsEnh_DeleteCachedChar(key)
+    DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " ..
+        BagsEnh_L().WH_DELETED:format(BagsEnh_CharColorName(key)))
+    if v.char == key then                       -- on visait le perso supprimé
+        local rest = BagsEnh_CachedChars()
+        v.char = rest[1] or BagsEnh_CharKey()
+    end
+    EnsureValidContainer(v)
+    SetupCharDD(v)
+    SetupContainerDD(v)
+    Refresh(v)
+end
+
+-- Confirmation avant suppression (pop-up standard WoW).
+if not StaticPopupDialogs["BAGSENH_WH_DELETE"] then
+    StaticPopupDialogs["BAGSENH_WH_DELETE"] = {
+        text = "%s", button1 = DELETE, button2 = CANCEL,
+        timeout = 0, whileDead = true, hideOnEscape = true, showAlert = true,
+        OnAccept = function(self)
+            if self.data then DeleteCharFromViewer(self.data.v, self.data.key) end
+        end,
+    }
 end
 
 -- ============================================================
@@ -359,6 +398,18 @@ local function CreateViewer()
     EnsureValidContainer(v)
     SetupCharDD(v)
     SetupContainerDD(v)
+
+    -- Suppression rapide du perso affiché (obsolète) — confirmation obligatoire.
+    v.delBtn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+    v.delBtn:SetSize(78, 20)
+    v.delBtn:SetPoint("LEFT", v.contDD, "RIGHT", -6, 2)
+    v.delBtn:SetText(ld.WH_DELETE)
+    v.delBtn:SetScript("OnClick", function()
+        if not v.char then return end
+        local dlg = StaticPopup_Show("BAGSENH_WH_DELETE",
+            ld.WH_DELETE_CONFIRM:format(BagsEnh_CharColorName(v.char)))
+        if dlg then dlg.data = { v = v, key = v.char } end
+    end)
 
     v.foot = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     v.foot:SetPoint("BOTTOMLEFT", PADDING, PADDING - 2)
