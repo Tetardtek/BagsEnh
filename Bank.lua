@@ -483,7 +483,7 @@ local function CreateBankFrame()
     bankFrame.compact:SetText(ld.MERGE_BTN)
     bankFrame.compact:SetScript("OnClick", function()
         if IsGuildStyle() then
-            DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. ld.MERGE_BANK_GUILD)
+            BagsEnh_Print(ld.MERGE_BANK_GUILD)
             return
         end
         if BagsEnh_MergeBankStacks then BagsEnh_MergeBankStacks() end

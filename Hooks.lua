@@ -46,5 +46,5 @@ function BagsEnh_SetUnified(state)
     if not state and BagsEnh_IsShown() then
         BagsEnh_Hide()
     end
-    DEFAULT_CHAT_FRAME:AddMessage(ld.TOGGLE_HINT:format(state and ld.STATE_ON or ld.STATE_OFF))
+    BagsEnh_Print(ld.TOGGLE_HINT:format(state and ld.STATE_ON or ld.STATE_OFF))
 end

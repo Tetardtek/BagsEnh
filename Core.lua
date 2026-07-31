@@ -93,10 +93,6 @@ function BagsEnh_OnNewLoot(link, count)
     end
 end
 
-function BagsEnh_ClearNew()
-    BagsEnh_newItems = {}
-    if BagsEnh_IsShown() then BagsEnh_Refresh() end
-end
 
 function BagsEnh_MarkSeen(id)
     if id then BagsEnh_newItems[id] = nil end

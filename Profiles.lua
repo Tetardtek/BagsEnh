@@ -4,10 +4,6 @@
 -- A profile snapshots the UI settings + item overrides + custom rules.
 -- ============================================================
 
-function BagsEnh_GetCharKey()
-    return UnitName("player") .. "-" .. GetRealmName()
-end
-
 function BagsEnh_SaveProfile(name)
     if not name or name == "" then return false end
     BagsEnhDB.profiles = BagsEnhDB.profiles or {}
@@ -28,7 +24,7 @@ function BagsEnh_LoadProfile(name)
         end
     end
     -- Remember char → profile
-    local charKey = BagsEnh_GetCharKey()
+    local charKey = BagsEnh_CharKey()
     BagsEnhDB.charProfiles = BagsEnhDB.charProfiles or {}
     BagsEnhDB.charProfiles[charKey] = name
 
@@ -74,8 +70,24 @@ function BagsEnh_ListProfiles()
     return names
 end
 
+-- Migration : charProfiles était indexé "Nom-Realm" (sans espaces) avant
+-- l'unification sur BagsEnh_CharKey (format "Nom - Realm"). On renomme la clé du
+-- perso COURANT si l'ancienne existe — par perso, donc aucune ambiguïté de
+-- parsing même si un royaume contient un tiret.
+local function MigrateCharProfileKey()
+    local cp = BagsEnhDB.charProfiles
+    if not cp then return end
+    local oldKey = UnitName("player") .. "-" .. GetRealmName()
+    local newKey = BagsEnh_CharKey()
+    if oldKey ~= newKey and cp[oldKey] ~= nil and cp[newKey] == nil then
+        cp[newKey] = cp[oldKey]
+        cp[oldKey] = nil
+    end
+end
+
 function BagsEnh_AutoLoadProfile()
-    local charKey = BagsEnh_GetCharKey()
+    MigrateCharProfileKey()
+    local charKey = BagsEnh_CharKey()
     local prof = BagsEnhDB.charProfiles and BagsEnhDB.charProfiles[charKey]
     if prof and BagsEnhDB.profiles and BagsEnhDB.profiles[prof] then
         BagsEnh_LoadProfile(prof)

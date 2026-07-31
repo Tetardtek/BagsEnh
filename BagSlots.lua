@@ -58,7 +58,7 @@ local function MoverFinish(msg)
     mover:SetScript("OnUpdate", nil)
     ClearCursor()
     if msg then
-        DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. msg)
+        BagsEnh_Print(msg)
     end
     if BagsEnh_MarkDirty then BagsEnh_MarkDirty() end
     if BagsEnh_RefreshBagSlots then BagsEnh_RefreshBagSlots() end
@@ -106,10 +106,10 @@ function BagsEnh_EmptyBag(bag)
     if mstate.running then return end
     local ld = BagsEnh_L()
     if InCombatLockdown and InCombatLockdown() then
-        DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. ld.SORT_ABORT_COMBAT); return
+        BagsEnh_Print(ld.SORT_ABORT_COMBAT); return
     end
     if AnyLocked() then
-        DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. ld.EMPTY_BUSY); return
+        BagsEnh_Print(ld.EMPTY_BUSY); return
     end
     if not NextItemInBag(bag) then
         return -- already empty, nothing to do
@@ -301,6 +301,3 @@ function BagsEnh_ToggleBagSlots()
 end
 
 -- Hidden with the main window (child of it), and closed explicitly here too.
-function BagsEnh_HideBagSlots()
-    if popup then popup:Hide() end
-end

@@ -1,6 +1,11 @@
 -- Enh series accent — the cyan (|cff00ccff) used across the addon's chrome.
 BagsEnh_ACCENT = { 0.10, 0.80, 1.00 }
 
+-- Ligne de chat préfixée aux couleurs de l'addon (source unique du préfixe).
+function BagsEnh_Print(msg)
+    BagsEnh_Print(tostring(msg))
+end
+
 -- Float rgb (0-1) -> "rrggbb" for |cffXXXXXX color escapes.
 function BagsEnh_ColorHex(r, g, b)
     return string.format("%02x%02x%02x",

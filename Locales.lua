@@ -56,7 +56,7 @@ BagsEnh_Locales = {
         MOD_ALT = "Alt",
         MOD_SHIFT = "Shift",
         VER_NEW = "a newer version (%s) is available — %s",
-        TOGGLE_HINT = "|cff00ccffBagsEnh:|r unified view %s. /be toggle to switch.",
+        TOGGLE_HINT = "unified view %s. /be toggle to switch.",
         STATE_ON = "enabled",
         STATE_OFF = "disabled",
         -- Categories
@@ -208,7 +208,7 @@ BagsEnh_Locales = {
         MOD_ALT = "Alt",
         MOD_SHIFT = "Maj",
         VER_NEW = "une version plus récente (%s) est disponible — %s",
-        TOGGLE_HINT = "|cff00ccffBagsEnh:|r vue unifiée %s. /be toggle pour changer.",
+        TOGGLE_HINT = "vue unifiée %s. /be toggle pour changer.",
         STATE_ON = "activée",
         STATE_OFF = "désactivée",
         -- Categories

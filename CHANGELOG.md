@@ -5,6 +5,17 @@ All notable changes to BagsEnh are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-07-31
+
+### Fixed
+- Unified the per-character key used across the cache, currencies, warehouse and
+  profiles — two slightly different formats had drifted apart. Existing
+  per-character profile auto-load bindings are migrated automatically on login.
+
+### Internal
+- Removed dead code and routed all addon chat output through a single helper
+  (`BagsEnh_Print`). No behaviour change.
+
 ## [2.3.0] - 2026-07-31
 
 ### Added

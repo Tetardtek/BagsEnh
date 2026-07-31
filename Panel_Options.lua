@@ -64,10 +64,10 @@ StaticPopupDialogs["BAGSENH_IMPORT"] = {
             i = i + 1; name = "Import " .. i
         end
         if BagsEnh_ImportProfile(str, name) then
-            DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. ld.PROF_IMPORTED:format(name))
+            BagsEnh_Print(ld.PROF_IMPORTED:format(name))
             if BagsEnh_RefreshProfileDD then BagsEnh_RefreshProfileDD() end
         else
-            DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. ld.PROF_IMPORT_ERR)
+            BagsEnh_Print(ld.PROF_IMPORT_ERR)
         end
     end,
 }
@@ -81,7 +81,7 @@ StaticPopupDialogs["BAGSENH_SAVEAS"] = {
             BagsEnh_SaveProfile(name)
             BagsEnhDB.currentProfile = name
             if BagsEnh_RefreshProfileDD then BagsEnh_RefreshProfileDD() end
-            DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. BagsEnh_L().PROF_SAVED:format(name))
+            BagsEnh_Print(BagsEnh_L().PROF_SAVED:format(name))
         end
     end,
 }
@@ -171,14 +171,14 @@ function BagsEnh_CreateOptionsPanel()
     Btn(ld.PROF_LOAD, 16, -357, 90, function()
         local n = CurrentName()
         if n and BagsEnh_LoadProfile(n) then
-            DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. ld.PROF_LOADED:format(n))
+            BagsEnh_Print(ld.PROF_LOADED:format(n))
         end
     end)
     Btn(ld.PROF_SAVE, 110, -357, 90, function()
         local n = CurrentName()
         if n then
             BagsEnh_SaveProfile(n)
-            DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. ld.PROF_SAVED:format(n))
+            BagsEnh_Print(ld.PROF_SAVED:format(n))
         else
             StaticPopup_Show("BAGSENH_SAVEAS", ld.PROF_NAME_PROMPT)
         end
@@ -192,7 +192,7 @@ function BagsEnh_CreateOptionsPanel()
             BagsEnh_DeleteProfile(n)
             BagsEnhDB.currentProfile = nil
             BagsEnh_RefreshProfileDD()
-            DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. ld.PROF_DELETED:format(n))
+            BagsEnh_Print(ld.PROF_DELETED:format(n))
         end
     end)
     Btn(ld.PROF_EXPORT, 110, -385, 90, function()

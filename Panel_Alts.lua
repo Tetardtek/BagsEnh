@@ -20,7 +20,7 @@ if not StaticPopupDialogs["BAGSENH_ALTS_DELETE"] then
         OnAccept = function(self)
             if not self.data then return end
             BagsEnh_DeleteCachedChar(self.data)
-            DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " ..
+            BagsEnh_Print(
                 BagsEnh_L().WH_DELETED:format(BagsEnh_CharColorName(self.data)))
             local P = _G.BagsEnhAltsPanel
             if P and P.Rebuild then P.Rebuild() end

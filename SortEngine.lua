@@ -105,7 +105,7 @@ local function Finish(msg)
     runner:SetScript("OnUpdate", nil)
     ClearCursor()
     if msg then
-        DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. msg)
+        BagsEnh_Print(msg)
     end
     if BagsEnh_MarkDirty then BagsEnh_MarkDirty() end
 end
@@ -171,11 +171,11 @@ end
 function BagsEnh_SortBags()
     if state.running then return end
     if InCombatLockdown and InCombatLockdown() then
-        DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. BagsEnh_L().SORT_ABORT_COMBAT)
+        BagsEnh_Print(BagsEnh_L().SORT_ABORT_COMBAT)
         return
     end
     if AnyLocked() then
-        DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. BagsEnh_L().SORT_BUSY)
+        BagsEnh_Print(BagsEnh_L().SORT_BUSY)
         return
     end
 

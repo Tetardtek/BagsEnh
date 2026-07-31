@@ -123,7 +123,7 @@ end
 
 function BagsEnh_ClearCache()
     BagsEnhDB.cache = {}
-    DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. (BagsEnh_L().WH_CACHE_CLEARED or "cache cleared."))
+    BagsEnh_Print((BagsEnh_L().WH_CACHE_CLEARED or "cache cleared."))
 end
 
 -- Remove a single character's cached snapshot (obsolete alt cleanup).

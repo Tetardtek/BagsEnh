@@ -307,7 +307,7 @@ end
 local function DeleteCharFromViewer(v, key)
     if not (v and key) then return end
     BagsEnh_DeleteCachedChar(key)
-    DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " ..
+    BagsEnh_Print(
         BagsEnh_L().WH_DELETED:format(BagsEnh_CharColorName(key)))
     if v.char == key then                       -- on visait le perso supprimé
         local rest = BagsEnh_CachedChars()

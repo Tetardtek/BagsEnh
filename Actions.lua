@@ -33,7 +33,6 @@ function BagsEnh_ActionModifierDown()
     return IsControlKeyDown()
 end
 
-local function Msg(s) DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. s) end
 
 local function Coin(c)
     return (GetCoinTextureString and GetCoinTextureString(c)) or tostring(c)
@@ -77,12 +76,12 @@ function BagsEnh_SectionAction(catKey, desc)
                 n = n + 1
             end
         end
-        Msg(n > 0 and ld.ACT_SOLD:format(n, Coin(gold)) or ld.ACT_NOTHING_SELL)
+        BagsEnh_Print(n > 0 and ld.ACT_SOLD:format(n, Coin(gold)) or ld.ACT_NOTHING_SELL)
     elseif c == "bank" then
         for _, it in ipairs(slots) do
             UseContainerItem(it.bag, it.slot)   -- banque ouverte : déplace en banque
             n = n + 1
         end
-        Msg(n > 0 and ld.ACT_DEPOSITED:format(n) or ld.ACT_NOTHING_DEPOSIT)
+        BagsEnh_Print(n > 0 and ld.ACT_DEPOSITED:format(n) or ld.ACT_NOTHING_DEPOSIT)
     end
 end

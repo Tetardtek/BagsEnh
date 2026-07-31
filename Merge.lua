@@ -11,7 +11,6 @@ local runner = CreateFrame("Frame")
 local st = { running = false, waiting = false, waitTicks = 0, moves = 0,
              containers = nil, label = nil }
 
-local function Msg(s) DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. s) end
 
 local function ItemIDAt(bag, slot)
     local link = GetContainerItemLink(bag, slot)
@@ -74,7 +73,7 @@ local function Finish(msg)
     st.running = false; st.waiting = false; st.containers = nil
     runner:SetScript("OnUpdate", nil)
     ClearCursor()
-    if msg then Msg(msg) end
+    if msg then BagsEnh_Print(msg) end
     if BagsEnh_IsBankShown and BagsEnh_IsBankShown() and BagsEnh_RefreshBank then
         BagsEnh_RefreshBank()
     end
@@ -105,10 +104,10 @@ end
 function BagsEnh_MergeStacks(containers, doneMsg)
     if st.running then return end
     if InCombatLockdown and InCombatLockdown() then
-        Msg(BagsEnh_L().SORT_ABORT_COMBAT); return
+        BagsEnh_Print(BagsEnh_L().SORT_ABORT_COMBAT); return
     end
-    if AnyLockedIn(containers) then Msg(BagsEnh_L().SORT_BUSY); return end
-    if not FindMerge(containers) then Msg(BagsEnh_L().MERGE_NONE); return end
+    if AnyLockedIn(containers) then BagsEnh_Print(BagsEnh_L().SORT_BUSY); return end
+    if not FindMerge(containers) then BagsEnh_Print(BagsEnh_L().MERGE_NONE); return end
     st.running = true; st.waiting = false; st.waitTicks = 0; st.moves = 0
     st.containers = containers; st.label = doneMsg or BagsEnh_L().MERGE_DONE
     runner:SetScript("OnUpdate", Tick)

@@ -10,7 +10,6 @@ local PREFIX = "BagsEnh"
 local GITHUB = "https://github.com/Tetardtek/BagsEnh"
 local VERSION = (GetAddOnMetadata and GetAddOnMetadata("BagsEnh", "Version")) or "?"
 
-local function Msg(s) DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. s) end
 
 local function ToTuple(v)
     local t = {}
@@ -33,7 +32,7 @@ local notified = false
 local function Notify(v)
     if not notified and VerGreater(v, VERSION) then
         notified = true
-        Msg(BagsEnh_L().VER_NEW:format(v, GITHUB))
+        BagsEnh_Print(BagsEnh_L().VER_NEW:format(v, GITHUB))
     end
 end
 
@@ -50,7 +49,7 @@ end
 
 -- Affichage manuel (/be version).
 function BagsEnh_VersionInfo()
-    Msg("v" .. VERSION .. " — " .. GITHUB)
+    BagsEnh_Print("v" .. VERSION .. " — " .. GITHUB)
 end
 
 local f = CreateFrame("Frame")

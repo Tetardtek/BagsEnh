@@ -88,9 +88,6 @@ BagsEnh_CATEGORY_LABELS = {
 -- Keys are "user<N>" (N = monotonic userCatSeq), never reused, so they never
 -- clash with the built-in keys and stay stable across renames.
 -- ============================================================
-function BagsEnh_IsUserCategory(key)
-    return BagsEnhDB and BagsEnhDB.userCategories and BagsEnhDB.userCategories[key] ~= nil
-end
 
 -- Display label for any category key: user name > localized built-in > raw key
 function BagsEnh_CategoryLabel(key)
