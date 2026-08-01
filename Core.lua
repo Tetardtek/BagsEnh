@@ -145,8 +145,10 @@ core:SetScript("OnEvent", function(self, event, ...)
         if BagsEnh_RefreshWarehouses then BagsEnh_RefreshWarehouses() end
         if BagsEnh_IsBankShown and BagsEnh_IsBankShown() then BagsEnh_RefreshBank() end
     elseif event == "GUILDBANKFRAME_OPENED" then
+        if BagsEnh_SetGuildBankOpen then BagsEnh_SetGuildBankOpen(true) end
         if BagsEnh_ShowGuildBank then BagsEnh_ShowGuildBank() end
     elseif event == "GUILDBANKFRAME_CLOSED" then
+        if BagsEnh_SetGuildBankOpen then BagsEnh_SetGuildBankOpen(false) end
         if BagsEnh_HideBank then BagsEnh_HideBank() end
     else
         if BagsEnh_IsShown() then

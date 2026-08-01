@@ -408,11 +408,24 @@ function BagsEnh_CreateMainFrame()
     viewBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
     mainFrame.viewBtn = viewBtn
 
+    -- Compact button (F7) — merges partial stacks in the bags, mirroring the
+    -- one in the character bank. Acts on the real slots, so it stays relevant
+    -- in both views: never hidden. Chained between view and sort so that
+    -- hiding sortBtn (category view) leaves no gap in the row.
+    local compactBtn = CreateFrame("Button", nil, mainFrame, "UIPanelButtonTemplate")
+    compactBtn:SetSize(84, 18)
+    compactBtn:SetPoint("RIGHT", viewBtn, "LEFT", -6, 0)
+    compactBtn:SetText(ld.MERGE_BTN)
+    compactBtn:SetScript("OnClick", function()
+        if BagsEnh_MergeBagStacks then BagsEnh_MergeBagStacks() end
+    end)
+    mainFrame.compactBtn = compactBtn
+
     -- Sort button (physical sort) — only meaningful in OneBag, where the real
     -- slots (and the result of the sort) are visible. Hidden in category view.
     local sortBtn = CreateFrame("Button", nil, mainFrame, "UIPanelButtonTemplate")
     sortBtn:SetSize(64, 18)
-    sortBtn:SetPoint("RIGHT", viewBtn, "LEFT", -6, 0)
+    sortBtn:SetPoint("RIGHT", compactBtn, "LEFT", -6, 0)
     sortBtn:SetText(ld.SORT)
     sortBtn:SetScript("OnClick", function() BagsEnh_SortBags() end)
     mainFrame.sortBtn = sortBtn

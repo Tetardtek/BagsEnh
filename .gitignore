@@ -1,0 +1,5 @@
+# Les zips de release vivent dans GitHub Releases, pas dans le dépôt : suivis,
+# ils gonflent l'historique ET se retrouvent empaquetés dans l'archive de la
+# release suivante (git archive embarque tout ce qui est suivi — la v2.3.1
+# contenait ainsi la v2.3.0, soit 80 Ko inutiles pour les joueurs).
+*.zip

@@ -5,6 +5,54 @@ All notable changes to BagsEnh are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-08-02
+
+### Fixed
+- **Addon chat messages were never displayed.** `BagsEnh_Print`, introduced in
+  2.3.1 as the single source of the chat prefix, called *itself* instead of the
+  chat frame — every message of the addon ended in an infinite recursion. Sell
+  reports, sort and compaction results, profile confirmations: none of them
+  could ever reach the chat.
+- **The French locale was never used.** `BagsEnh_L()` read `BagsEnhDB.lang`,
+  which nothing ever wrote, and fell back to English. The 148 translated keys
+  had never been shown once. The language is now resolved from the client
+  (`GetLocale()`) unless explicitly set — see below.
+
+### Added
+- **Language selector** (main panel) — *Auto (client)*, English, Français. A
+  client running in English can be played in French (translation provided by an
+  addon), so client detection alone is not enough; an explicit choice is needed.
+  Changing it prints a reminder to reload the UI, as already-built labels cannot
+  be retranslated on the fly.
+- **Compact button in the bag window** — mirrors the one in the character bank.
+  The underlying `BagsEnh_MergeBagStacks` already existed and was only reachable
+  through `/be merge`. Never hidden: it acts on the real slots, so it stays
+  relevant in both views.
+- **Selling limits for group actions** (Display panel) — a **max rarity** and a
+  **max item level** (0 = no limit). Group selling never sells above either.
+  Protects an epic from a stray modifier-click, where the previous guard only
+  skipped items with no vendor value. The sell report now states how many items
+  were kept back, so a section that does not sell is never mistaken for an empty
+  one.
+- **Group move by category and sub-category, both ways.** Withdrawing was
+  missing entirely: a modifier-click on a section header in the bank window now
+  sends the whole group back to the bags, the mirror of the existing deposit.
+  Works on the character bank (container API) and on the guild / personal /
+  realm banks (`AutoStoreGuildBankItem`, targeting the right tab first).
+- Bank section headers and sub-headers are now buttons rather than plain frames
+  and font strings, so they can carry that action.
+
+### Fixed (context)
+- **Deposit did nothing on the personal and realm banks.** Ascension routes
+  guild, personal and realm banks through the guild bank API, and
+  `GUILDBANKFRAME_OPENED` never set the bag-action context — so a
+  modifier-click on a section found no context at all and stayed silent.
+
+### Internal
+- `*.zip` is now ignored. Tracked release zips were bloating the history and,
+  worse, being packaged *inside* the next release archive: v2.3.1 shipped with
+  v2.3.0 embedded (80 KB of dead weight for players).
+
 ## [2.3.1] - 2026-07-31
 
 ### Fixed

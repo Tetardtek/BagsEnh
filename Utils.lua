@@ -3,7 +3,7 @@ BagsEnh_ACCENT = { 0.10, 0.80, 1.00 }
 
 -- Ligne de chat préfixée aux couleurs de l'addon (source unique du préfixe).
 function BagsEnh_Print(msg)
-    BagsEnh_Print(tostring(msg))
+    DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh:|r " .. tostring(msg))
 end
 
 -- Float rgb (0-1) -> "rrggbb" for |cffXXXXXX color escapes.

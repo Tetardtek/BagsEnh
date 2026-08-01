@@ -20,9 +20,20 @@ BagsEnh_Locales = {
         WH_CLEAR_ALL = "Clear all",
         WH_CLEAR_ALL_CONFIRM = "Delete the cached bags/bank of ALL characters?",
         ACT_SOLD = "sold %d item(s) (%s)",
+        ACT_SOLD_KEPT = "sold %d item(s) (%s) — %d kept by your limits",
+        ACT_ALL_KEPT = "nothing sold: %d item(s) kept by your limits.",
         ACT_NOTHING_SELL = "nothing sellable in that section.",
         ACT_DEPOSITED = "deposited %d item(s) to the bank.",
         ACT_NOTHING_DEPOSIT = "nothing to deposit there.",
+        ACT_WITHDRAWN = "withdrew %d item(s) from the bank.",
+        ACT_NOTHING_WITHDRAW = "nothing to withdraw there.",
+        ACT_WITHDRAW_GUILD = "group withdrawal only for the character bank.",
+        OPT_SELL_MAX_QUALITY = "Max rarity to sell",
+        OPT_SELL_MAX_ILVL = "Max item level (0 = no limit)",
+        OPT_SELL_LIMITS_HINT = "Group selling never sells above these limits.",
+        OPT_LANGUAGE = "Language",
+        LANG_AUTO = "Auto (client)",
+        LANG_RELOAD = "language changed — reload the UI to apply it everywhere.",
         GOLD_ALLCHARS = "Gold — all characters",
         GOLD_TOTAL = "Total",
         SLOTS = "%d/%d slots",
@@ -172,9 +183,20 @@ BagsEnh_Locales = {
         WH_CLEAR_ALL = "Tout effacer",
         WH_CLEAR_ALL_CONFIRM = "Supprimer les sacs/banque en cache de TOUS les personnages ?",
         ACT_SOLD = "%d objet(s) vendu(s) (%s)",
+        ACT_SOLD_KEPT = "%d objet(s) vendu(s) (%s) — %d protégé(s) par tes limites",
+        ACT_ALL_KEPT = "rien vendu : %d objet(s) protégé(s) par tes limites.",
         ACT_NOTHING_SELL = "rien à vendre dans cette section.",
         ACT_DEPOSITED = "%d objet(s) déposé(s) en banque.",
         ACT_NOTHING_DEPOSIT = "rien à déposer ici.",
+        ACT_WITHDRAWN = "%d objet(s) retiré(s) de la banque.",
+        ACT_NOTHING_WITHDRAW = "rien à retirer ici.",
+        ACT_WITHDRAW_GUILD = "retrait groupé réservé à la banque du personnage.",
+        OPT_SELL_MAX_QUALITY = "Rareté max vendable",
+        OPT_SELL_MAX_ILVL = "Niveau d'objet max (0 = sans limite)",
+        OPT_SELL_LIMITS_HINT = "La vente groupée ne vend jamais au-dessus de ces limites.",
+        OPT_LANGUAGE = "Langue",
+        LANG_AUTO = "Auto (client)",
+        LANG_RELOAD = "langue changée — recharge l'interface pour l'appliquer partout.",
         GOLD_ALLCHARS = "Or — tous les personnages",
         GOLD_TOTAL = "Total",
         SLOTS = "%d/%d emplacements",
@@ -305,7 +327,12 @@ BagsEnh_Locales = {
     },
 }
 
+-- Langue : réglage explicite s'il existe (BagsEnhDB.lang, pour un futur
+-- sélecteur), sinon celle du client — GetLocale() rend déjà "frFR"/"enUS"/…,
+-- soit exactement les clés de BagsEnh_Locales. Repli enUS si non traduite.
 function BagsEnh_L()
-    local lang = (BagsEnhDB and BagsEnhDB.lang) or "enUS"
+    local lang = (BagsEnhDB and BagsEnhDB.lang)
+              or (GetLocale and GetLocale())
+              or "enUS"
     return BagsEnh_Locales[lang] or BagsEnh_Locales["enUS"]
 end

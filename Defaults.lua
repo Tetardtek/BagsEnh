@@ -37,6 +37,11 @@ local defaults = {
     profiles = {},       -- [name] = settings snapshot
     charProfiles = {},   -- [char-realm] = profile name (auto-load)
     actionModifier = "ctrl", -- touche des actions groupées de section : ctrl | alt | shift (F1)
+    -- Garde-fous de la vente groupée (F1) : au-delà, l'objet n'est jamais
+    -- vendu, même s'il a une valeur marchande. Volontairement HORS profils
+    -- (comme actionModifier) : une sécurité ne doit pas changer avec le profil.
+    sellMaxQuality = 2,  -- qualité max vendable : 0 médiocre … 5 légendaire (2 = vert)
+    sellMaxILvl = 0,     -- niveau d'objet max vendable ; 0 = pas de limite
 }
 
 function BagsEnh_DeepCopy(t)

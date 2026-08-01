@@ -145,27 +145,62 @@ local function ReleaseAll()
     subHeaderActive = {}
 end
 
--- Plain sub-header (material / slot line) for the shared grouping engine.
+-- Sub-header (material / slot line) for the shared grouping engine. Bouton
+-- plutôt que simple FontString : il porte le retrait groupé de la SOUS-section,
+-- comme l'en-tête de catégorie le fait pour la section entière.
 local function AcquireSubHeader()
     local h = table.remove(subHeaderPool)
     if not h then
-        h = bankFrame.content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        h:SetJustifyH("LEFT")
+        h = CreateFrame("Button", nil, bankFrame.content)
+        h:SetHeight(SUBHEADER_H)
+        h:RegisterForClicks("LeftButtonUp")
+        h.label = h:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        h.label:SetPoint("LEFT", 0, 0)
+        h.label:SetJustifyH("LEFT")
+        h:SetScript("OnClick", function(self)
+            if not self.catKey then return end
+            if not (BagsEnh_ActionModifierDown and BagsEnh_ActionModifierDown()) then return end
+            if IsGuildStyle() then
+                if BagsEnh_SectionWithdrawGuild then
+                    BagsEnh_SectionWithdrawGuild(self.catKey, self.desc)
+                end
+                return
+            end
+            if BagsEnh_SectionWithdraw then
+                BagsEnh_SectionWithdraw(self.catKey, self.desc)
+            end
+        end)
     end
     h:Show()
     subHeaderActive[#subHeaderActive + 1] = h
     return h
 end
 
+-- Bouton (et non Frame) : l'en-tête porte l'action groupée de RETRAIT, le
+-- symétrique du dépôt déclenché depuis les sacs. La banque n'ayant pas de
+-- repli de section, le modificateur est la seule action attachée ici.
 local function AcquireHeader()
     local h = table.remove(headerPool)
     if not h then
-        h = CreateFrame("Frame", nil, bankFrame.content)
+        h = CreateFrame("Button", nil, bankFrame.content)
         h:SetHeight(HEADER_H)
+        h:RegisterForClicks("LeftButtonUp")
         h.dot = h:CreateTexture(nil, "OVERLAY")
         h.dot:SetTexture("Interface\\Buttons\\WHITE8X8"); h.dot:SetSize(3, 12); h.dot:SetPoint("LEFT", 0, 0)
         h.label = h:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         h.label:SetPoint("LEFT", 9, 0); h.label:SetJustifyH("LEFT")
+        h:SetScript("OnClick", function(self)
+            if not self.catKey then return end
+            if not (BagsEnh_ActionModifierDown and BagsEnh_ActionModifierDown()) then return end
+            -- Guilde/royaume : déplacement par une autre API, comme le compactage.
+            if IsGuildStyle() then
+                if BagsEnh_SectionWithdrawGuild then
+                    BagsEnh_SectionWithdrawGuild(self.catKey, self.desc)
+                end
+                return
+            end
+            if BagsEnh_SectionWithdraw then BagsEnh_SectionWithdraw(self.catKey, self.desc) end
+        end)
     end
     h:Show()
     headerActive[#headerActive + 1] = h
@@ -301,6 +336,7 @@ function BagsEnh_RefreshBank()
         if cat == "hidden" and not BagsEnhDB.showHidden then items = nil end
         if items and #items > 0 then
             local header = AcquireHeader()
+            header.catKey = cat          -- cible de l'action groupée de retrait
             header:ClearAllPoints()
             header:SetPoint("TOPLEFT", bankFrame.content, "TOPLEFT", 0, -y)
             header:SetWidth(viewW)
@@ -317,11 +353,16 @@ function BagsEnh_RefreshBank()
                 y = BagsEnh_LayoutGrouped(items, grouping, {
                     perRow = perRow, yStep = yStep, subH = SUBHEADER_H,
                     place = function(it, col, yy) PlaceButton(it, col, yy) end,
-                    header = function(text, indent, yy)
+                    -- `desc` (4e arg) décrit la sous-section : { sub = matériau }
+                    -- et/ou { slot = emplacement }. Il était ignoré ici ; il
+                    -- devient la cible du retrait groupé.
+                    header = function(text, indent, yy, desc)
                         local sh = AcquireSubHeader()
+                        sh.catKey, sh.desc = cat, desc
                         sh:ClearAllPoints()
                         sh:SetPoint("TOPLEFT", bankFrame.content, "TOPLEFT", indent, -yy)
-                        sh:SetText(text)
+                        sh:SetWidth(math.max(1, viewW - indent))
+                        sh.label:SetText(text)
                     end,
                 }, y)
             else

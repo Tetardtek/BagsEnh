@@ -108,6 +108,41 @@ function BagsEnh_CreateOptionsPanel()
     local slIcon = MakeSlider(P, "iconSize", ld.OPT_ICON_SIZE, 240, -150, 24, 48, 1, false, ReRender)
     local slSpacing = MakeSlider(P, "spacing", ld.OPT_SPACING, 20, -205, 0, 16, 1, false, ReRender)
 
+    -- Langue — colonne de droite, libre au-delà des sliders (x 240 + 144).
+    -- « Auto » laisse BagsEnhDB.lang à nil : BagsEnh_L() retombe alors sur
+    -- GetLocale(). Un choix explicite est indispensable ici, un client anglais
+    -- pouvant très bien être joué en français (traduction fournie par un addon).
+    local langLbl = P:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    langLbl:SetPoint("TOPLEFT", 420, -95)
+    langLbl:SetText(ld.OPT_LANGUAGE)
+    local LANGS = { { key = nil, label = ld.LANG_AUTO },
+                    { key = "enUS", label = "English" },
+                    { key = "frFR", label = "Français" } }
+    local function LangLabel(k)
+        for _, o in ipairs(LANGS) do if o.key == k then return o.label end end
+        return ld.LANG_AUTO
+    end
+    local langDD = CreateFrame("Frame", "BagsEnhOptLang", P, "UIDropDownMenuTemplate")
+    langDD:SetPoint("TOPLEFT", 410, -115)
+    UIDropDownMenu_SetWidth(langDD, 110)
+    UIDropDownMenu_Initialize(langDD, function()
+        local info = UIDropDownMenu_CreateInfo()
+        for _, o in ipairs(LANGS) do
+            info.text = o.label
+            info.checked = (BagsEnhDB.lang == o.key)
+            info.func = function()
+                BagsEnhDB.lang = o.key
+                UIDropDownMenu_SetText(langDD, o.label)
+                CloseDropDownMenus()
+                -- Les libellés déjà construits ne se retraduisent pas à chaud :
+                -- on le dit plutôt que de laisser croire à un réglage inopérant.
+                BagsEnh_Print(BagsEnh_L().LANG_RELOAD)
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+    UIDropDownMenu_SetText(langDD, LangLabel(BagsEnhDB.lang))
+
     local btnReset = CreateFrame("Button", nil, P, "UIPanelButtonTemplate")
     btnReset:SetSize(160, 22)
     btnReset:SetPoint("TOPLEFT", 16, -260)

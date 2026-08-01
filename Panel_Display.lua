@@ -140,6 +140,84 @@ function BagsEnh_CreateDisplayPanel()
         UIDropDownMenu_SetText(amDD, ModLabel(BagsEnhDB.actionModifier or "ctrl"))
     end
 
+    -- Garde-fous de la vente groupée (F1) — même colonne, sous le raccourci.
+    -- Les noms de rareté viennent du client (ITEM_QUALITYn_DESC) : déjà
+    -- traduits et cohérents avec le reste de l'interface du jeu.
+    local sqLbl = P:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    sqLbl:SetPoint("TOPLEFT", 300, -116)
+    sqLbl:SetText(ld.OPT_SELL_MAX_QUALITY)
+    local function QualLabel(q)
+        local name = _G["ITEM_QUALITY" .. q .. "_DESC"] or tostring(q)
+        local c = BagsEnh_QUALITY_COLORS and BagsEnh_QUALITY_COLORS[q]
+        if not c then return name end
+        return ("|cff%s%s|r"):format(BagsEnh_ColorHex(c[1], c[2], c[3]), name)
+    end
+    local sqDD = CreateFrame("Frame", "BagsEnhDispSellQuality", P, "UIDropDownMenuTemplate")
+    sqDD:SetPoint("TOPLEFT", 290, -136)
+    UIDropDownMenu_SetWidth(sqDD, 110)
+    UIDropDownMenu_Initialize(sqDD, function()
+        local info = UIDropDownMenu_CreateInfo()
+        for q = 0, 5 do
+            info.text = QualLabel(q)
+            info.checked = ((BagsEnhDB.sellMaxQuality or 2) == q)
+            info.func = function()
+                BagsEnhDB.sellMaxQuality = q
+                UIDropDownMenu_SetText(sqDD, QualLabel(q))
+                CloseDropDownMenus()
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+    UIDropDownMenu_SetText(sqDD, QualLabel(BagsEnhDB.sellMaxQuality or 2))
+    refreshers[#refreshers + 1] = function()
+        UIDropDownMenu_SetText(sqDD, QualLabel(BagsEnhDB.sellMaxQuality or 2))
+    end
+
+    -- Plafond de niveau d'objet : saisie libre plutôt qu'une liste de paliers,
+    -- les seuils utiles dépendant du contenu joué. 0 désactive le plafond.
+    -- Label et champ sur UNE ligne : sous -190 la colonne de droite percute le
+    -- menu de groupement de gauche (x 168 + 150 de large + ~40 de chrome).
+    local siLbl = P:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    siLbl:SetPoint("TOPLEFT", 300, -176)
+    siLbl:SetWidth(118)
+    siLbl:SetJustifyH("LEFT")
+    siLbl:SetText(ld.OPT_SELL_MAX_ILVL)
+    local siBox = CreateFrame("EditBox", "BagsEnhDispSellILvl", P, "InputBoxTemplate")
+    siBox:SetPoint("TOPLEFT", 428, -172)
+    siBox:SetSize(52, 20)
+    siBox:SetAutoFocus(false)
+    siBox:SetNumeric(true)
+    siBox:SetMaxLetters(4)
+    siBox:SetText(tostring(BagsEnhDB.sellMaxILvl or 0))
+    -- Validé à Entrée ET à la perte du focus : sans le second, une valeur
+    -- tapée puis abandonnée resterait affichée sans être enregistrée.
+    local function CommitILvl(self)
+        local v = tonumber(self:GetText()) or 0
+        if v < 0 then v = 0 end
+        BagsEnhDB.sellMaxILvl = v
+        self:SetText(tostring(v))
+        self:ClearFocus()
+    end
+    siBox:SetScript("OnEnterPressed", CommitILvl)
+    siBox:SetScript("OnEditFocusLost", CommitILvl)
+    refreshers[#refreshers + 1] = function()
+        siBox:SetText(tostring(BagsEnhDB.sellMaxILvl or 0))
+    end
+
+    -- L'explication vit en infobulle : un bloc de texte à cet endroit
+    -- déborderait sur le menu de groupement de la colonne de gauche.
+    local function SellTip(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText(ld.OPT_SELL_LIMITS_HINT, 0.55, 0.82, 1, 1, true)
+        GameTooltip:Show()
+    end
+    local function HideTip() GameTooltip:Hide() end
+    for _, f in ipairs({ sqDD, siBox }) do
+        f:EnableMouse(true)     -- un Frame de dropdown ne reçoit pas la souris sans ça
+        f:SetScript("OnEnter", SellTip)
+        f:SetScript("OnLeave", HideTip)
+    end
+
     -- ============================================================
     -- Promote trade goods to their own top-level categories
     -- ============================================================
