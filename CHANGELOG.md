@@ -5,7 +5,7 @@ All notable changes to BagsEnh are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.6.0] - 2026-08-02
 
 ### Changed
 - **Version checking moved out of BagsEnh entirely.** It now lives in AllEnh, the
@@ -294,6 +294,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   auto-load.
 - English (enUS) and French (frFR) localization.
 
+[2.6.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v2.6.0
+[2.5.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v2.5.0
+[2.4.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v2.4.0
+[2.3.1]: https://github.com/Tetardtek/BagsEnh/releases/tag/v2.3.1
+[2.3.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v2.3.0
 [2.2.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v2.2.0
 [2.1.1]: https://github.com/Tetardtek/BagsEnh/releases/tag/v2.1.1
 [2.1.0]: https://github.com/Tetardtek/BagsEnh/releases/tag/v2.1.0
