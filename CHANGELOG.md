@@ -5,6 +5,23 @@ All notable changes to BagsEnh are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Version checking moved out of BagsEnh entirely.** It now lives in AllEnh, the
+  hub, and nowhere else. BagsEnh keeps one line — it declares itself to the hub
+  if the hub is there — plus `/be version`, which prints the release link.
+
+  The protocol removed here only reached your **guild and your group**, so a
+  player with neither was never told anything. It also carried a second copy of
+  a version comparator the hub already had. Every way of keeping two copies
+  identical came down to manual synchronisation dressed up as a guarantee.
+
+  Checking a version is not a feature of BagsEnh; it is a feature of the suite.
+  BagsEnh sorts your bags perfectly on its own, and that is what standing alone
+  means. Without the hub you check the GitHub page, like any other addon — the
+  link is at the top of the README.
+
 ## [2.5.0] - 2026-08-02
 
 ### Added
