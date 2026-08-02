@@ -60,7 +60,10 @@ BagsEnh_CATEGORY_ORDER = {
     "consumables",
     "gems",
     "profession",
+    "recipes",
     "quest",
+    "bags",
+    "glyphs",
     "junk",
     "misc",
     "hidden",       -- rendered only when BagsEnhDB.showHidden
@@ -78,6 +81,9 @@ BagsEnh_CATEGORY_LABELS = {
     gems = "CAT_GEMS",
     profession = "CAT_PROFESSION",
     quest = "CAT_QUEST",
+    recipes = "CAT_RECIPES",
+    bags = "CAT_BAGS",
+    glyphs = "CAT_GLYPHS",
     junk = "CAT_JUNK",
     misc = "CAT_MISC",
     hidden = "CAT_HIDDEN",
@@ -209,11 +215,18 @@ local TYPE_TO_CATEGORY = {
     ["Consumable"] = "consumables",
     ["Gem"] = "gems",
     ["Trade Goods"] = "profession",
-    ["Recipe"] = "profession",
     ["Reagent"] = "profession",
     ["Projectile"] = "consumables",
     ["Quiver"] = "equipment",
     ["Quest"] = "quest",
+    -- Ces trois classes n'étaient mappées nulle part et tombaient donc toutes
+    -- dans « Divers », qui n'a par ailleurs aucun second niveau. Container et
+    -- Glyph sont des classes natives à part entière ; Recipe quittait la
+    -- catégorie artisanat, où un apprentissage voisinait avec le minerai qu'il
+    -- sert à travailler.
+    ["Container"] = "bags",
+    ["Glyph"] = "glyphs",
+    ["Recipe"] = "recipes",
 }
 
 local typeMapBuilt = false
@@ -228,11 +241,15 @@ local function BuildTypeMap()
         [armor or ""] = "equipment",
         [consumable or ""] = "consumables",
         [tradegoods or ""] = "profession",
-        [recipe or ""] = "profession",
         [projectile or ""] = "consumables",
         [quiver or ""] = "equipment",
         [gem or ""] = "gems",
         [quest or ""] = "quest",
+        -- container, glyph et recipe etaient extraits de GetAuctionItemClasses
+        -- puis jamais utilises : les trois finissaient dans « Divers ».
+        [container or ""] = "bags",
+        [glyph or ""] = "glyphs",
+        [recipe or ""] = "recipes",
     }
     map[""] = nil
     for k, v in pairs(map) do
@@ -338,16 +355,31 @@ end
 
 -- Sub-grouping mode for a category (nil = plain flat, no sub-headers).
 -- equipment / appearance are user-configurable; profession is material-only.
+-- Catégories dont le sous-type natif porte une vraie information et mérite donc
+-- un second niveau. Liste explicite plutôt que « toutes » : sur « camelote »,
+-- « nouveau » ou « quête », un sous-en-tête par objet serait du bruit, pas du
+-- classement.
+local SUBGROUPED = {
+    consumables = true,   -- Potion / Élixir / Flacon / Parchemin / Nourriture / Bandage
+    misc = true,          -- Camelote / Composant / Familier / Monture / Fête / Autre
+    gems = true,          -- Rouge / Bleue / Jaune / Méta…
+    recipes = true,       -- Alchimie / Couture / Forge / Ingénierie…
+    bags = true,          -- Sac / Sacoche d'herboriste / Carquois…
+    glyphs = true,
+}
+
 function BagsEnh_GroupingFor(cat)
     if cat == "equipment" then
         local g = BagsEnhDB.equipGrouping or "material_slot"
         return g ~= "none" and g or nil
-    elseif cat == "profession" then
+    elseif cat == "profession" or SUBGROUPED[cat] then
         return "material"
     elseif cat == "uncollected" then
         local g = BagsEnhDB.uncollectedGrouping or "none"
         return g ~= "none" and g or nil
     end
+    -- Un sous-type promu en catégorie propre (prof<N>) garde ses sous-sections.
+    if type(cat) == "string" and cat:match("^prof%d+$") then return "material" end
     return nil
 end
 
@@ -360,6 +392,27 @@ function BagsEnh_SubCatKey(subCat)
     return "999" .. (subCat or "")
 end
 
+-- Niveau d'objet, mémorisé. Volontairement lu ICI plutôt qu'ajouté aux
+-- structures d'items : celles-ci sont construites dans Frames.lua, Bank.lua ET
+-- Warehouse.lua — trois constructeurs, donc trois occasions d'en oublier un et
+-- de laisser une fenêtre trier autrement que les deux autres.
+-- table.sort appelle le comparateur O(n log n) fois, d'où la mémoïsation.
+local ilvlCache = {}
+
+function BagsEnh_ItemLevel(link)
+    if not link then return 0 end
+    local id = BagsEnh_ItemIDFromLink(link)
+    if not id then return 0 end
+    local v = ilvlCache[id]
+    if v ~= nil then return v end
+    local _, _, _, lvl = GetItemInfo(link)
+    -- Pas encore en cache client : on rend 0 sans mémoriser, pour relire au
+    -- prochain passage plutôt que de figer un mauvais rang.
+    if not lvl then return 0 end
+    ilvlCache[id] = lvl
+    return lvl
+end
+
 function BagsEnh_CmpMaterialFirst(a, b)
     local sa, sb = BagsEnh_SubCatKey(a.subCat), BagsEnh_SubCatKey(b.subCat)
     if sa ~= sb then return sa < sb end
@@ -367,6 +420,14 @@ function BagsEnh_CmpMaterialFirst(a, b)
     local eb = BagsEnh_EQUIPLOC_ORDER[b.equipLoc or ""] or 99
     if ea ~= eb then return ea < eb end
     if (a.quality or 0) ~= (b.quality or 0) then return (a.quality or 0) > (b.quality or 0) end
+    -- Le palier avant le nom. Sur de l'équipement la qualité tranche déjà le
+    -- plus souvent ; sur des matériaux elle est quasi constante, et le tri
+    -- retombait alors sur l'alphabet : Lin, Fil de mage, Tissu runique, Soie,
+    -- Laine. Le niveau d'objet suit le palier pour tous les matériaux
+    -- d'artisanat, sans table codée en dur — donc valable aussi pour les objets
+    -- propres à Ascension.
+    local la, lb = BagsEnh_ItemLevel(a.link), BagsEnh_ItemLevel(b.link)
+    if la ~= lb then return la < lb end
     return (a.link or "") < (b.link or "")
 end
 
@@ -521,10 +582,17 @@ function BagsEnh_Categorize(link)
             category = "special"
         end
 
-        -- Sub-category from itemSubType (localized by the client, display-ready):
-        -- equipment → weapon type / armor material
-        -- profession → Leather / Cloth / Herb / Cooking / Metal & Stone / ...
-        if (category == "equipment" or category == "profession") and itemSubType then
+        -- Sub-category from itemSubType (localized by the client, display-ready).
+        -- Renseignée pour TOUTE catégorie, plus seulement l'équipement et
+        -- l'artisanat : le client fournit un sous-type pour chaque objet et on
+        -- le jetait pour dix catégories sur douze. C'est ce qui rendait Divers
+        -- et les consommables illisibles — pas un défaut de classement, une
+        -- absence de second niveau.
+        --   consommables → Potion / Élixir / Flacon / Parchemin / Nourriture…
+        --   divers       → Camelote / Composant / Familier / Monture / Fête…
+        --   artisanat    → Tissu / Métal et pierre / Herbe / Cuir / Viande…
+        --   équipement   → type d'arme / matériau d'armure
+        if itemSubType and itemSubType ~= "" then
             subCat = itemSubType
         end
         -- Promote a trade-goods subtype to its own top-level category if enabled
