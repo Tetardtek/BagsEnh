@@ -5,6 +5,34 @@ All notable changes to BagsEnh are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-08-02
+
+### Added
+- **Sub-sections everywhere they mean something.** Until now only Equipment and
+  Profession & Trade had a second level; the other ten categories received the
+  item's subtype from the client and threw it away. Consumables now split into
+  Potion / Elixir / Flask / Scroll / Food & Drink / Bandage, Miscellaneous into
+  Junk / Reagent / Pet / Mount / Holiday, and gems, recipes, bags and glyphs
+  group the same way. Nothing was misfiled — there simply was no second level.
+- **Bags & Containers, Recipes and Glyphs** are categories of their own. These
+  three native item classes were mapped nowhere and all landed in
+  Miscellaneous. Recipes also leave Profession & Trade, where a thing you learn
+  sat next to the ore it is used on.
+- **Bloodforged (PvP) gear is never sold to a vendor.** On Ascension this gear
+  grants a bonus in PvP and a *penalty* in PvE, and is worth far more at the
+  auction house than at a merchant — where the sale cannot be undone. A group
+  sell used to send it off with everything else. On by default, with a
+  checkbox in the Display panel; the sell report states what was held back.
+
+### Changed
+- **Items are sorted by item level before name.** On gear, quality usually
+  decides the order; on materials it is nearly constant, so sorting fell back
+  to the alphabet — Linen, Mageweave, Runecloth, Silk, Wool instead of the
+  tiers a player thinks in. Item level tracks the tier without any hardcoded
+  table, so it holds for Ascension's own items too.
+- All of the above applies to the bags, every bank and the cross-character
+  warehouse at once: they share one layout engine since 2.1.0.
+
 ## [2.4.0] - 2026-08-02
 
 ### Fixed
