@@ -205,6 +205,22 @@ local ASCENSION_PATTERNS = {
     { pattern = "^Mystic Scroll", category = "mystic" },
 }
 
+-- Équipement PvP d'Ascension. Ces objets donnent un bonus de dégâts et de
+-- résistance en PvP, et un MALUS en PvE — l'équipement PvE fait l'inverse. Ce
+-- sont donc deux jeux d'équipement qu'on alterne, et qu'il ne faut surtout pas
+-- confondre : ni au moment de s'habiller pour un raid, ni au moment de vendre
+-- (leur valeur est à l'hôtel des ventes, pas chez le marchand).
+--
+-- Détection par le NOM et non par l'identifiant : sur 1 744 objets Bloodforged
+-- relevés dans le cache client, les identifiants s'étalent sur 19 plages (de
+-- 6,0 M à 8,5 M, plus des isolés bien plus bas) alors que le préfixe, lui, est
+-- systématique.
+function BagsEnh_IsBloodforged(link)
+    if not link then return false end
+    local name = GetItemInfo(link)
+    return (name and name:find("Bloodforged", 1, true)) and true or false
+end
+
 -- Native itemType → category.
 -- Static English fallback, completed at runtime by GetAuctionItemClasses():
 -- the client tells us its own (possibly custom/localized) class strings —

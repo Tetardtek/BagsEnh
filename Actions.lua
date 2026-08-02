@@ -50,11 +50,17 @@ end
 -- est d'éviter la bêtise irréversible (un épique parti d'un Ctrl+clic), pas
 -- de filtrer finement — d'où deux plafonds simples et cumulatifs.
 -- quality : 0 médiocre … 5 légendaire. ilvl 0 = plafond désactivé.
-local function SellProtected(quality, ilvl)
+local function SellProtected(quality, ilvl, link)
     local maxQ = BagsEnhDB and BagsEnhDB.sellMaxQuality
     if maxQ and quality and quality > maxQ then return true end
     local maxI = BagsEnhDB and BagsEnhDB.sellMaxILvl
     if maxI and maxI > 0 and ilvl and ilvl > maxI then return true end
+    -- Équipement PvP d'Ascension : sa valeur est à l'hôtel des ventes, pas chez
+    -- le marchand, et la vente au PNJ est irréversible. Protégé par défaut.
+    if BagsEnhDB and BagsEnhDB.sellProtectBloodforged ~= false
+            and BagsEnh_IsBloodforged and BagsEnh_IsBloodforged(link) then
+        return true
+    end
     return false
 end
 
@@ -91,7 +97,7 @@ function BagsEnh_SectionAction(catKey, desc)
         for _, it in ipairs(slots) do
             local _, _, quality, ilvl, _, _, _, _, _, _, sell = GetItemInfo(it.link)
             if sell and sell > 0 then           -- ne vend jamais un objet sans valeur
-                if SellProtected(quality, ilvl) then
+                if SellProtected(quality, ilvl, it.link) then
                     kept = kept + 1             -- au-dessus d'un plafond : on laisse
                 else
                     local _, count = GetContainerItemInfo(it.bag, it.slot)

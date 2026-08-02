@@ -212,6 +212,30 @@ function BagsEnh_CreateDisplayPanel()
         GameTooltip:Show()
     end
     local function HideTip() GameTooltip:Hide() end
+
+    -- Troisième garde-fou de vente, en colonne de GAUCHE : la colonne de droite
+    -- ne peut pas descendre sous -190 sans percuter le menu de groupement.
+    -- Placé JUSTE AVANT la section « Trade goods », qui a été décalée de 30 px :
+    -- ses cases sont construites par une boucle (-350 - row * 26) et leur nombre
+    -- dépend du client, donc rien ne peut être ancré « après » elles de façon
+    -- fiable.
+    local bfCB = CreateFrame("CheckButton", "BagsEnhDispSellProtectBF", P, "InterfaceOptionsCheckButtonTemplate")
+    bfCB:SetPoint("TOPLEFT", 16, -270)
+    _G[bfCB:GetName() .. "Text"]:SetText(ld.OPT_SELL_PROTECT_BF)
+    bfCB:SetChecked(BagsEnhDB.sellProtectBloodforged ~= false)
+    bfCB:SetScript("OnClick", function(self)
+        BagsEnhDB.sellProtectBloodforged = self:GetChecked() and true or false
+    end)
+    bfCB:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:SetText(ld.OPT_SELL_PROTECT_BF_TIP, 0.55, 0.82, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    bfCB:SetScript("OnLeave", HideTip)
+    refreshers[#refreshers + 1] = function()
+        bfCB:SetChecked(BagsEnhDB.sellProtectBloodforged ~= false)
+    end
+
     for _, f in ipairs({ sqDD, siBox }) do
         f:EnableMouse(true)     -- un Frame de dropdown ne reçoit pas la souris sans ça
         f:SetScript("OnEnter", SellTip)
@@ -222,11 +246,11 @@ function BagsEnh_CreateDisplayPanel()
     -- Promote trade goods to their own top-level categories
     -- ============================================================
     local s3 = P:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    s3:SetPoint("TOPLEFT", 16, -274)
+    s3:SetPoint("TOPLEFT", 16, -304)
     s3:SetText("|cff00ccff" .. ld.DISP_PROMOTE .. "|r")
 
     local phint = P:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    phint:SetPoint("TOPLEFT", 16, -294)
+    phint:SetPoint("TOPLEFT", 16, -324)
     phint:SetWidth(450)
     phint:SetJustifyH("LEFT")
     phint:SetText(ld.DISP_PROMOTE_HINT)
@@ -244,7 +268,7 @@ function BagsEnh_CreateDisplayPanel()
             local col = (i - 1) % cols
             local row = math.floor((i - 1) / cols)
             local cb = CreateFrame("CheckButton", "BagsEnhProm" .. sub.index, P, "InterfaceOptionsCheckButtonTemplate")
-            cb:SetPoint("TOPLEFT", 16 + col * 150, -320 - row * 26)
+            cb:SetPoint("TOPLEFT", 16 + col * 150, -350 - row * 26)
             _G[cb:GetName() .. "Text"]:SetText(sub.name)
             cb.profIndex = sub.index
             cb:SetScript("OnClick", function(self)

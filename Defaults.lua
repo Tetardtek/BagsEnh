@@ -42,6 +42,11 @@ local defaults = {
     -- (comme actionModifier) : une sécurité ne doit pas changer avec le profil.
     sellMaxQuality = 2,  -- qualité max vendable : 0 médiocre … 5 légendaire (2 = vert)
     sellMaxILvl = 0,     -- niveau d'objet max vendable ; 0 = pas de limite
+    -- Équipement PvP d'Ascension (« Bloodforged ») : bonus en PvP, MALUS en PvE.
+    -- Sa valeur est à l'hôtel des ventes, jamais chez le marchand — et la vente
+    -- au PNJ ne se rattrape pas. Protégé par défaut, comme les autres
+    -- garde-fous de vente : une sécurité ne s'active pas après coup.
+    sellProtectBloodforged = true,
 }
 
 function BagsEnh_DeepCopy(t)
