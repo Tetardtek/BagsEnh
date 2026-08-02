@@ -1,5 +1,15 @@
 -- ============================================================
--- Version — annonce de version entre joueurs (F6).
+-- Version — annonce de version entre joueurs.
+--
+-- ⚠️ SE MET EN RETRAIT SI AllEnh EST PRESENT. Le hub porte desormais le
+-- controle de version de toute la suite Enh, et il le fait mieux : ce fichier
+-- passe par les messages d'addon, qui ne portent qu'en GUILDE ou en GROUPE —
+-- un joueur sans guilde et hors groupe n'est donc jamais prevenu. Le hub, lui,
+-- passe par un canal partage et atteint tout le monde.
+--
+-- On ne supprime pas ce fichier pour autant : BagsEnh doit rester complet et
+-- utile SEUL. C'est la meme regle que pour les reglages — l'addon fonctionne
+-- sans le hub, le hub ameliore quand il est la.
 -- Chaque client diffuse sa version via les messages d'addon (guilde / groupe).
 -- Si un pair annonce une version SUPÉRIEURE, on prévient le joueur une fois par
 -- session avec le lien du dépôt GitHub. Aucune dépendance, dégradation propre
@@ -29,7 +39,14 @@ local function VerGreater(a, b)
 end
 
 local notified = false
+-- Le hub est-il la pour s'en charger ? Teste a l'usage et non au chargement :
+-- l'ordre de chargement des addons n'est pas garanti.
+local function HubHandles()
+    return AllEnh_VersionCheck ~= nil
+end
+
 local function Notify(v)
+    if HubHandles() then return end
     if not notified and VerGreater(v, VERSION) then
         notified = true
         BagsEnh_Print(BagsEnh_L().VER_NEW:format(v, GITHUB))
@@ -38,6 +55,9 @@ end
 
 local function Broadcast()
     if VERSION == "?" then return end
+    -- Silence radio si le hub annonce deja pour nous : sans ca la meme
+    -- information partirait deux fois a chaque connexion.
+    if HubHandles() then return end
     local msg = "V:" .. VERSION
     if IsInGuild and IsInGuild() then SendAddonMessage(PREFIX, msg, "GUILD") end
     if GetNumRaidMembers and GetNumRaidMembers() > 0 then
@@ -49,8 +69,21 @@ end
 
 -- Affichage manuel (/be version).
 function BagsEnh_VersionInfo()
-    BagsEnh_Print("v" .. VERSION .. " — " .. GITHUB)
+    BagsEnh_Print("v" .. VERSION .. " — " .. GITHUB .. "/releases/latest")
 end
+
+-- Declaration au hub, sans dependance : si AllEnh est absent, la ligne ne fait
+-- rien. C'est lui qui decouvre les addons Enh presents, pas l'inverse.
+local reg = CreateFrame("Frame")
+reg:RegisterEvent("PLAYER_LOGIN")
+reg:SetScript("OnEvent", function()
+    if AllEnh_Register then
+        AllEnh_Register("BagsEnh", {
+            addon = "BagsEnh",
+            url = GITHUB .. "/releases/latest",
+        })
+    end
+end)
 
 local f = CreateFrame("Frame")
 f:RegisterEvent("CHAT_MSG_ADDON")

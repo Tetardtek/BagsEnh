@@ -1,5 +1,8 @@
 # BagsEnh
 
+> **[⬇ Download the latest release](https://github.com/Tetardtek/BagsEnh/releases/latest)**
+
+
 A World of Warcraft addon for **Ascension WoW** (3.3.0) that replaces the default
 bags with a single unified window: smart categories, sub-categories for gear and
 trade goods, instant search, physical sorting, categorized **bank** views (incl.
