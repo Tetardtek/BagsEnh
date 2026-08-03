@@ -43,6 +43,22 @@ local reg = CreateFrame("Frame")
 reg:RegisterEvent("PLAYER_LOGIN")
 reg:SetScript("OnEvent", function()
     if AllEnh_Register then
-        AllEnh_Register("BagsEnh", { addon = "BagsEnh", url = LATEST })
+        -- `actions` : ce que le hub peut proposer en acces rapide. Il ne connait
+        -- aucune de nos fonctions — c'est nous qui les lui tendons, au meme titre
+        -- que l'URL. Un hub plus ancien ignore simplement le champ.
+        AllEnh_Register("BagsEnh", {
+            addon = "BagsEnh",
+            url = LATEST,
+            actions = {
+                {
+                    key = "warehouse",
+                    label = BagsEnh_L().WAREHOUSE_TITLE,
+                    icon = "Interface\\Icons\\INV_Box_01",
+                    run = function()
+                        if BagsEnh_OpenWarehouse then BagsEnh_OpenWarehouse() end
+                    end,
+                },
+            },
+        })
     end
 end)
