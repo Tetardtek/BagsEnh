@@ -1,6 +1,6 @@
 ## Interface: 30300
-## Title: BagsEnh |cff00ccffv2.4.0|r
-## Version: 2.7.0
+## Title: BagsEnh
+## Version: 2.8.0-dev
 ## Notes: Unified bag view with smart categories. Enh series.
 ## SavedVariables: BagsEnhDB
 
