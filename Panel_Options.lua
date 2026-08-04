@@ -4,7 +4,7 @@
 -- ============================================================
 
 local function MakeCheck(parent, key, label, x, y, onChange)
-    local cb = CreateFrame("CheckButton", "BagsEnhOpt" .. key, parent, "InterfaceOptionsCheckButtonTemplate")
+    local cb = CreateFrame("CheckButton", "BagsEnhOpt" .. key, parent, BagsEnh_CheckTemplate())
     cb:SetPoint("TOPLEFT", x, y)
     _G[cb:GetName() .. "Text"]:SetText(label)
     cb:SetChecked(BagsEnhDB[key])
@@ -247,5 +247,5 @@ function BagsEnh_CreateOptionsPanel()
         BagsEnh_RefreshProfileDD()
     end)
 
-    InterfaceOptions_AddCategory(P)
+    BagsEnh_AddOptionsCategory(P)
 end

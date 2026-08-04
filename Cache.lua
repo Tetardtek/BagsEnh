@@ -25,8 +25,8 @@ end
 local function ScanContainers(containers)
     local items = {}
     for _, c in ipairs(containers) do
-        for slot = 1, GetContainerNumSlots(c) or 0 do
-            local _, count, _, _, _, _, link = GetContainerItemInfo(c, slot)
+        for slot = 1, BagsEnh_GetContainerNumSlots(c) or 0 do
+            local _, count, _, _, _, _, link = BagsEnh_GetContainerItemInfo(c, slot)
             if link then
                 items[#items + 1] = { link = link, count = count or 1 }
             end

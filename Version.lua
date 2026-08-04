@@ -29,7 +29,7 @@
 
 local GITHUB = "https://github.com/Tetardtek/BagsEnh"
 local LATEST = GITHUB .. "/releases/latest"
-local VERSION = (GetAddOnMetadata and GetAddOnMetadata("BagsEnh", "Version")) or "?"
+local VERSION = (GetAddOnMetadata and BagsEnh_GetAddOnMetadata("BagsEnh", "Version")) or "?"
 
 -- Affichage manuel (/be version).
 function BagsEnh_VersionInfo()

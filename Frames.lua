@@ -24,7 +24,7 @@ local activeCatHeaders = {}
 local menuFrame
 local function ShowItemMenu(btn)
     local bag, slot = btn:GetParent():GetID(), btn:GetID()
-    local link = GetContainerItemLink(bag, slot)
+    local link = BagsEnh_GetContainerItemLink(bag, slot)
     local itemID = BagsEnh_ItemIDFromLink(link)
     if not itemID then return end
     local ld = BagsEnh_L()
@@ -290,7 +290,7 @@ function BagsEnh_CreateMainFrame()
     -- Clean flat panel: solid dark fill + crisp 1px border tinted toward the
     -- series accent. Reads as "designed" without shipping custom textures.
     local ac = BagsEnh_ACCENT
-    mainFrame:SetBackdrop({
+    BagsEnh_Backdrop(mainFrame):SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
         edgeFile = "Interface\\Buttons\\WHITE8X8",
         edgeSize = 1,
@@ -596,10 +596,10 @@ function BagsEnh_Refresh()
     local usedSlots, totalSlots = 0, 0
     local unresolved = false
     for _, bag in ipairs(BAGS) do
-        local numSlots = GetContainerNumSlots(bag) or 0
+        local numSlots = BagsEnh_GetContainerNumSlots(bag) or 0
         totalSlots = totalSlots + numSlots
         for slot = 1, numSlots do
-            local texture, count, locked, quality, _, _, link = GetContainerItemInfo(bag, slot)
+            local texture, count, locked, quality, _, _, link = BagsEnh_GetContainerItemInfo(bag, slot)
             if texture then
                 usedSlots = usedSlots + 1
                 local cat, resolved, subCat, equipLoc = BagsEnh_Categorize(link)

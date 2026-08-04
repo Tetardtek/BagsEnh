@@ -280,5 +280,5 @@ function BagsEnh_CreateCategoriesPanel()
         RefreshUsers()
         RefreshList()
     end)
-    InterfaceOptions_AddCategory(P)
+    BagsEnh_AddOptionsCategory(P)
 end

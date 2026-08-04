@@ -1,0 +1,218 @@
+-- BagsEnh / Compat.lua
+--
+-- Couche de compatibilite entre le client 3.3.5 (Ascension / CoA) et le client
+-- moderne (Classic Era 1.15+). Chargee EN PREMIER : tout le reste du code
+-- l'utilise sans jamais savoir sur quel client il tourne.
+--
+-- Meme doctrine que LootEnh/Compat.lua : une couche FIGEE plutot que deux
+-- branches divergentes. BagsEnh continue d'evoluer sur CoA ; ecrire deux fois
+-- serait un drift structurel.
+--
+-- Principe de degradation : quand une API n'existe nulle part, on renonce a la
+-- fonction, jamais a l'addon. Les sacs doivent s'afficher meme si un panneau
+-- d'options ne s'enregistre pas.
+--
+-- Releve en jeu sur Classic Era 1.15.9 (04/08) :
+--   C_Container ....................... table
+--   GetContainerNumSlots .............. nil    <- les globales conteneurs sont MORTES
+--   Settings .......................... table
+--   InterfaceOptions_AddCategory ...... nil
+
+BagsEnh_Compat = {}
+local C = BagsEnh_Compat
+
+C.modern = (Settings ~= nil and Settings.RegisterCanvasLayoutCategory ~= nil)
+
+local CC = C_Container   -- nil sur 3.3.5
+
+---------------------------------------------------------------------------
+-- Conteneurs
+---------------------------------------------------------------------------
+-- L'essentiel du portage de BagsEnh tient ici : 57 appels, dont un seul cas
+-- reellement delicat.
+--
+-- 🔴 GetContainerItemInfo n'a pas ete renomme, il a change de SIGNATURE.
+--    3.3.5    : texture, count, locked, quality, readable, lootable, link,
+--               isFiltered, noValue, itemID   (valeurs multiples)
+--    moderne  : une TABLE unique, avec des champs nommes
+--
+-- Les 13 appels de BagsEnh utilisent tous la forme positionnelle
+-- (`local _, count, locked = ...`). Plutot que de reecrire 13 sites d'appel, le
+-- shim reconstruit l'ancienne signature depuis la table : le code metier n'a pas
+-- une ligne a changer, et il reste lisible sur les deux clients.
+--
+-- ⚠️ Le retour nil quand la case est vide doit etre preserve tel quel :
+--    plusieurs endroits font `if not BagsEnh_GetContainerItemInfo(b, s) then`
+--    pour detecter une case libre. Renvoyer une table vide casserait ce test.
+
+function BagsEnh_GetContainerItemInfo(bag, slot)
+    if CC and CC.GetContainerItemInfo then
+        local i = CC.GetContainerItemInfo(bag, slot)
+        if not i then return nil end
+        return i.iconFileID, i.stackCount, i.isLocked, i.quality, i.isReadable,
+               i.hasLoot, i.hyperlink, i.isFiltered, i.hasNoValue, i.itemID
+    end
+    return GetContainerItemInfo(bag, slot)
+end
+
+function BagsEnh_GetContainerNumSlots(bag)
+    if CC and CC.GetContainerNumSlots then return CC.GetContainerNumSlots(bag) end
+    return GetContainerNumSlots(bag)
+end
+
+function BagsEnh_GetContainerItemLink(bag, slot)
+    if CC and CC.GetContainerItemLink then return CC.GetContainerItemLink(bag, slot) end
+    return GetContainerItemLink(bag, slot)
+end
+
+function BagsEnh_GetContainerItemID(bag, slot)
+    if CC and CC.GetContainerItemID then return CC.GetContainerItemID(bag, slot) end
+    return GetContainerItemID(bag, slot)
+end
+
+function BagsEnh_UseContainerItem(bag, slot, ...)
+    if CC and CC.UseContainerItem then return CC.UseContainerItem(bag, slot, ...) end
+    return UseContainerItem(bag, slot, ...)
+end
+
+function BagsEnh_PickupContainerItem(bag, slot)
+    if CC and CC.PickupContainerItem then return CC.PickupContainerItem(bag, slot) end
+    return PickupContainerItem(bag, slot)
+end
+
+function BagsEnh_SplitContainerItem(bag, slot, amount)
+    if CC and CC.SplitContainerItem then return CC.SplitContainerItem(bag, slot, amount) end
+    return SplitContainerItem(bag, slot, amount)
+end
+
+function BagsEnh_GetContainerNumFreeSlots(bag)
+    if CC and CC.GetContainerNumFreeSlots then return CC.GetContainerNumFreeSlots(bag) end
+    return GetContainerNumFreeSlots(bag)
+end
+
+function BagsEnh_ContainerIDToInventoryID(bag)
+    if CC and CC.ContainerIDToInventoryID then return CC.ContainerIDToInventoryID(bag) end
+    return ContainerIDToInventoryID(bag)
+end
+
+---------------------------------------------------------------------------
+-- Backdrop
+---------------------------------------------------------------------------
+-- Depuis Shadowlands, SetBackdrop n'existe plus sur une frame ordinaire. On
+-- applique le mixin a la volee plutot que de toucher chaque CreateFrame : un
+-- seul point d'entree, et les SetBackdropColor qui suivent fonctionnent aussi.
+--
+--     BagsEnh_Backdrop(f):SetBackdrop({ ... })
+
+function BagsEnh_Backdrop(frame)
+    if frame and not frame.SetBackdrop and BackdropTemplateMixin then
+        Mixin(frame, BackdropTemplateMixin)
+        if frame.HasScript and frame:HasScript("OnSizeChanged") then
+            frame:HookScript("OnSizeChanged", frame.OnBackdropSizeChanged)
+        end
+    end
+    return frame
+end
+
+---------------------------------------------------------------------------
+-- Cases a cocher
+---------------------------------------------------------------------------
+-- Aucune API ne permet d'interroger la presence d'un gabarit : on tente.
+
+local checkTemplate
+
+function BagsEnh_CheckTemplate()
+    if checkTemplate ~= nil then return checkTemplate end
+    local candidates = {
+        "InterfaceOptionsCheckButtonTemplate",
+        "UICheckButtonTemplate",
+        "OptionsBaseCheckButtonTemplate",
+    }
+    for i = 1, table.getn(candidates) do
+        local ok, f = pcall(CreateFrame, "CheckButton", nil, UIParent, candidates[i])
+        if ok and f then
+            f:Hide()
+            checkTemplate = candidates[i]
+            return checkTemplate
+        end
+    end
+    checkTemplate = false
+    return checkTemplate
+end
+
+---------------------------------------------------------------------------
+-- Panneaux d'options
+---------------------------------------------------------------------------
+
+local categories = {}
+local rootCategory
+
+function BagsEnh_AddOptionsCategory(panel)
+    if not panel or not panel.name then return end
+
+    if C.modern then
+        local cat
+        if panel.parent and categories[panel.parent] then
+            cat = Settings.RegisterCanvasLayoutSubcategory(
+                categories[panel.parent], panel, panel.name)
+        else
+            cat = Settings.RegisterCanvasLayoutCategory(panel, panel.name)
+            if Settings.RegisterAddOnCategory then
+                Settings.RegisterAddOnCategory(cat)
+            end
+            rootCategory = rootCategory or cat
+        end
+        categories[panel.name] = cat
+        return cat
+    end
+
+    if InterfaceOptions_AddCategory then
+        InterfaceOptions_AddCategory(panel)
+        categories[panel.name] = panel
+        rootCategory = rootCategory or panel
+        return panel
+    end
+end
+
+function BagsEnh_OpenOptions(panel)
+    local key = panel and panel.name
+    local cat = (key and categories[key]) or rootCategory
+    if not cat then return end
+
+    if C.modern then
+        if Settings.OpenToCategory then
+            Settings.OpenToCategory(cat.GetID and cat:GetID() or cat)
+        end
+        return
+    end
+
+    if InterfaceOptionsFrame_OpenToCategory then
+        -- Double appel : contournement du bug 3.3.5, confine ici.
+        InterfaceOptionsFrame_OpenToCategory(cat)
+        InterfaceOptionsFrame_OpenToCategory(cat)
+    end
+end
+
+---------------------------------------------------------------------------
+-- Metadonnees d'addon
+---------------------------------------------------------------------------
+
+function BagsEnh_GetAddOnMetadata(addon, field)
+    if C_AddOns and C_AddOns.GetAddOnMetadata then
+        return C_AddOns.GetAddOnMetadata(addon, field)
+    end
+    if GetAddOnMetadata then
+        return GetAddOnMetadata(addon, field)
+    end
+    return nil
+end
+
+function BagsEnh_IsAddOnLoaded(addon)
+    if C_AddOns and C_AddOns.IsAddOnLoaded then
+        return C_AddOns.IsAddOnLoaded(addon)
+    end
+    if IsAddOnLoaded then
+        return IsAddOnLoaded(addon)
+    end
+    return false
+end

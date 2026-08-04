@@ -65,5 +65,5 @@ function BagsEnh_CreateOrderPanel()
     end)
 
     P:SetScript("OnShow", Refresh)
-    InterfaceOptions_AddCategory(P)
+    BagsEnh_AddOptionsCategory(P)
 end

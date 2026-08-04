@@ -1,0 +1,45 @@
+## Interface: 11509
+## Title: BagsEnh |cff00ccffv2.4.0|r
+## Version: 2.7.0
+## Notes: Unified bag view with smart categories. Enh series.
+## SavedVariables: BagsEnhDB
+
+# .toc SUFFIXE — lu par Classic Era, ignore par le client 3.3.5.
+#
+# Les clients modernes cherchent d'abord <Addon>_<Saveur>.toc (_Vanilla pour
+# Classic Era) et retombent sur <Addon>.toc a defaut. Le client 3.3.5 ne connait
+# que <Addon>.toc et ignore celui-ci.
+#
+# UN SEUL dossier, un seul code, deux clients : Ascension lit BagsEnh.toc
+# (Interface 30300), Classic Era lit celui-ci (11509).
+#
+# 🔴 Cette liste de fichiers est DUPLIQUEE. Un fichier ajoute ici doit l'etre
+# dans les deux .toc, sinon il ne sera pas charge sur l'un des deux clients —
+# et l'addon aura l'air casse sur un seul client, le pire symptome a
+# diagnostiquer. Un .toc ne peut pas en inclure un autre : contrainte du format.
+# Le contenu des deux listes doit rester STRICTEMENT identique.
+
+Compat.lua
+Locales.lua
+Defaults.lua
+Utils.lua
+Categories.lua
+SortEngine.lua
+Profiles.lua
+Frames.lua
+BagSlots.lua
+Bank.lua
+Cache.lua
+Currency.lua
+Warehouse.lua
+Panel_Options.lua
+Panel_Display.lua
+Panel_Currency.lua
+Panel_Categories.lua
+Panel_Order.lua
+Panel_Alts.lua
+Hooks.lua
+Actions.lua
+Merge.lua
+Version.lua
+Core.lua

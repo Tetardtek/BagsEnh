@@ -116,5 +116,5 @@ function BagsEnh_CreateAltsPanel()
     end)
 
     P:SetScript("OnShow", Rebuild)
-    InterfaceOptions_AddCategory(P)
+    BagsEnh_AddOptionsCategory(P)
 end

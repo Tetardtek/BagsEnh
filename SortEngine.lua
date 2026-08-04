@@ -46,7 +46,7 @@ end
 local function AllSlots()
     local slots = {}
     for _, bag in ipairs(BAGS) do
-        for slot = 1, GetContainerNumSlots(bag) or 0 do
+        for slot = 1, BagsEnh_GetContainerNumSlots(bag) or 0 do
             slots[#slots + 1] = {bag = bag, slot = slot}
         end
     end
@@ -55,8 +55,8 @@ end
 
 local function AnyLocked()
     for _, bag in ipairs(BAGS) do
-        for slot = 1, GetContainerNumSlots(bag) or 0 do
-            local _, _, locked = GetContainerItemInfo(bag, slot)
+        for slot = 1, BagsEnh_GetContainerNumSlots(bag) or 0 do
+            local _, _, locked = BagsEnh_GetContainerItemInfo(bag, slot)
             if locked then return true end
         end
     end
@@ -68,8 +68,8 @@ end
 local function BuildTargetOrder()
     local items = {}
     for _, bag in ipairs(BAGS) do
-        for slot = 1, GetContainerNumSlots(bag) or 0 do
-            local link = GetContainerItemLink(bag, slot)
+        for slot = 1, BagsEnh_GetContainerNumSlots(bag) or 0 do
+            local link = BagsEnh_GetContainerItemLink(bag, slot)
             if link then
                 items[#items + 1] = {link = link, key = ItemSortKey(link)}
             end
@@ -91,7 +91,7 @@ end
 local function FindItemFrom(slots, fromIdx, wantLink)
     for i = fromIdx, #slots do
         local s = slots[i]
-        if GetContainerItemLink(s.bag, s.slot) == wantLink then
+        if BagsEnh_GetContainerItemLink(s.bag, s.slot) == wantLink then
             return i
         end
     end
@@ -148,7 +148,7 @@ local function Tick()
     end
 
     -- Already correct? advance
-    if GetContainerItemLink(dest.bag, dest.slot) == wantLink then
+    if BagsEnh_GetContainerItemLink(dest.bag, dest.slot) == wantLink then
         state.step = state.step + 1
         return
     end
@@ -162,8 +162,8 @@ local function Tick()
     end
     local src = slots[srcIdx]
 
-    PickupContainerItem(src.bag, src.slot)
-    PickupContainerItem(dest.bag, dest.slot)
+    BagsEnh_PickupContainerItem(src.bag, src.slot)
+    BagsEnh_PickupContainerItem(dest.bag, dest.slot)
     state.waiting = true
     state.waitTicks = 0
 end

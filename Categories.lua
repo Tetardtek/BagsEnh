@@ -670,8 +670,8 @@ function BagsEnh_DebugDump()
     BuildTypeMap()
     DEFAULT_CHAT_FRAME:AddMessage("|cff00ccffBagsEnh debug|r — name | type | subType | quality | category")
     for bag = 0, 4 do
-        for slot = 1, GetContainerNumSlots(bag) or 0 do
-            local link = GetContainerItemLink(bag, slot)
+        for slot = 1, BagsEnh_GetContainerNumSlots(bag) or 0 do
+            local link = BagsEnh_GetContainerItemLink(bag, slot)
             if link then
                 local name, _, quality, _, _, itemType, itemSubType = GetItemInfo(link)
                 local cat = BagsEnh_Categorize(link)

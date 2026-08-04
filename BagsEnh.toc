@@ -4,6 +4,7 @@
 ## Notes: Unified bag view with smart categories. Enh series.
 ## SavedVariables: BagsEnhDB
 
+Compat.lua
 Locales.lua
 Defaults.lua
 Utils.lua

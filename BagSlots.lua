@@ -16,8 +16,8 @@ local mstate = { running = false }
 
 local function AnyLocked()
     for _, bag in ipairs(BAG_IDS) do
-        for slot = 1, GetContainerNumSlots(bag) or 0 do
-            local _, _, locked = GetContainerItemInfo(bag, slot)
+        for slot = 1, BagsEnh_GetContainerNumSlots(bag) or 0 do
+            local _, _, locked = BagsEnh_GetContainerItemInfo(bag, slot)
             if locked then return true end
         end
     end
@@ -26,8 +26,8 @@ end
 
 -- First occupied slot in a bag, or nil when the bag is empty.
 local function NextItemInBag(bag)
-    for slot = 1, GetContainerNumSlots(bag) or 0 do
-        if GetContainerItemInfo(bag, slot) then return slot end
+    for slot = 1, BagsEnh_GetContainerNumSlots(bag) or 0 do
+        if BagsEnh_GetContainerItemInfo(bag, slot) then return slot end
     end
     return nil
 end
@@ -38,12 +38,12 @@ local function FindFreeSlot(link, excludeBag)
     local fam = (GetItemFamily and GetItemFamily(link)) or 0
     for _, bag in ipairs(BAG_IDS) do
         if bag ~= excludeBag then
-            local free, bagFam = GetContainerNumFreeSlots(bag)
+            local free, bagFam = BagsEnh_GetContainerNumFreeSlots(bag)
             bagFam = bagFam or 0
             if free and free > 0
                and (bagFam == 0 or (fam ~= 0 and bit.band(fam, bagFam) ~= 0)) then
-                for slot = 1, GetContainerNumSlots(bag) or 0 do
-                    if not GetContainerItemInfo(bag, slot) then
+                for slot = 1, BagsEnh_GetContainerNumSlots(bag) or 0 do
+                    if not BagsEnh_GetContainerItemInfo(bag, slot) then
                         return bag, slot
                     end
                 end
@@ -90,14 +90,14 @@ local function MoverTick()
         MoverFinish(ld.EMPTY_DONE); return
     end
 
-    local link = GetContainerItemLink(bag, srcSlot)
+    local link = BagsEnh_GetContainerItemLink(bag, srcSlot)
     local dBag, dSlot = FindFreeSlot(link, bag)
     if not dBag then
         MoverFinish(ld.EMPTY_NOSPACE); return
     end
 
-    PickupContainerItem(bag, srcSlot)
-    PickupContainerItem(dBag, dSlot)
+    BagsEnh_PickupContainerItem(bag, srcSlot)
+    BagsEnh_PickupContainerItem(dBag, dSlot)
     mstate.waiting = true
     mstate.waitTicks = 0
 end
@@ -140,7 +140,7 @@ local function BuildRow(parent, bag, y)
     btn:SetSize(36, 36)
     btn:SetPoint("LEFT", 0, 0)
     btn.bag = bag
-    btn.invSlot = (bag >= 1) and ContainerIDToInventoryID(bag) or nil
+    btn.invSlot = (bag >= 1) and BagsEnh_ContainerIDToInventoryID(bag) or nil
     btn:RegisterForClicks("LeftButtonUp")
 
     -- Empty bag-slot art shows through when no bag is equipped
@@ -222,8 +222,8 @@ function BagsEnh_RefreshBagSlots()
     for bag = 0, 4 do
         local row = rows[bag]
         if row then
-            local total = GetContainerNumSlots(bag) or 0
-            local free = GetContainerNumFreeSlots(bag) or 0
+            local total = BagsEnh_GetContainerNumSlots(bag) or 0
+            local free = BagsEnh_GetContainerNumFreeSlots(bag) or 0
             if bag == 0 then
                 row.btn.icon:SetTexture("Interface\\Buttons\\Button-Backpack-Up")
                 row.btn.icon:Show()
@@ -259,7 +259,7 @@ local function CreatePopup()
     popup:SetSize(204, 28 + 5 * 42 + 6)
     popup:SetPoint("TOPLEFT", parent, "TOPRIGHT", 4, 0)
     local ac = BagsEnh_ACCENT or { 0.10, 0.80, 1.00 }
-    popup:SetBackdrop({
+    BagsEnh_Backdrop(popup):SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
         edgeFile = "Interface\\Buttons\\WHITE8X8",
         edgeSize = 1,

@@ -59,11 +59,11 @@ local scanInit = false
 local function CountBags()
     local c = {}
     for bag = 0, 4 do
-        for slot = 1, GetContainerNumSlots(bag) or 0 do
-            local link = GetContainerItemLink(bag, slot)
+        for slot = 1, BagsEnh_GetContainerNumSlots(bag) or 0 do
+            local link = BagsEnh_GetContainerItemLink(bag, slot)
             local id = link and BagsEnh_ItemIDFromLink(link)
             if id then
-                local _, count = GetContainerItemInfo(bag, slot)
+                local _, count = BagsEnh_GetContainerItemInfo(bag, slot)
                 c[id] = (c[id] or 0) + (count or 1)
             end
         end

@@ -10,7 +10,7 @@ local function ReRender()
 end
 
 local function MakeCheck(parent, key, label, x, y, onChange)
-    local cb = CreateFrame("CheckButton", "BagsEnhDisp" .. key, parent, "InterfaceOptionsCheckButtonTemplate")
+    local cb = CreateFrame("CheckButton", "BagsEnhDisp" .. key, parent, BagsEnh_CheckTemplate())
     cb:SetPoint("TOPLEFT", x, y)
     _G[cb:GetName() .. "Text"]:SetText(label)
     cb:SetChecked(BagsEnhDB[key])
@@ -219,7 +219,7 @@ function BagsEnh_CreateDisplayPanel()
     -- ses cases sont construites par une boucle (-350 - row * 26) et leur nombre
     -- dépend du client, donc rien ne peut être ancré « après » elles de façon
     -- fiable.
-    local bfCB = CreateFrame("CheckButton", "BagsEnhDispSellProtectBF", P, "InterfaceOptionsCheckButtonTemplate")
+    local bfCB = CreateFrame("CheckButton", "BagsEnhDispSellProtectBF", P, BagsEnh_CheckTemplate())
     bfCB:SetPoint("TOPLEFT", 16, -270)
     _G[bfCB:GetName() .. "Text"]:SetText(ld.OPT_SELL_PROTECT_BF)
     bfCB:SetChecked(BagsEnhDB.sellProtectBloodforged ~= false)
@@ -267,7 +267,7 @@ function BagsEnh_CreateDisplayPanel()
         for i, sub in ipairs(subs) do
             local col = (i - 1) % cols
             local row = math.floor((i - 1) / cols)
-            local cb = CreateFrame("CheckButton", "BagsEnhProm" .. sub.index, P, "InterfaceOptionsCheckButtonTemplate")
+            local cb = CreateFrame("CheckButton", "BagsEnhProm" .. sub.index, P, BagsEnh_CheckTemplate())
             cb:SetPoint("TOPLEFT", 16 + col * 150, -350 - row * 26)
             _G[cb:GetName() .. "Text"]:SetText(sub.name)
             cb.profIndex = sub.index
@@ -293,5 +293,5 @@ function BagsEnh_CreateDisplayPanel()
         end
     end)
 
-    InterfaceOptions_AddCategory(P)
+    BagsEnh_AddOptionsCategory(P)
 end

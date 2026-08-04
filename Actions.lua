@@ -6,7 +6,7 @@
 --
 -- Branché sur les EN-TÊTES de section (boutons custom) : aucun risque de taint,
 -- contrairement aux boutons d'items dont l'OnClick natif reste intact.
--- Mécanique : UseContainerItem() EST le « clic droit » qui s'adapte au
+-- Mécanique : BagsEnh_UseContainerItem() EST le « clic droit » qui s'adapte au
 -- contexte du jeu — il vend au marchand, dépose banque ouverte. On se contente
 -- de le déclencher sur les bons slots, avec les gardes de contexte.
 -- ============================================================
@@ -70,8 +70,8 @@ end
 local function SectionSlots(catKey, desc, containers)
     local out = {}
     for _, bag in ipairs(containers or BAGS) do
-        for slot = 1, GetContainerNumSlots(bag) or 0 do
-            local _, _, locked, _, _, _, link = GetContainerItemInfo(bag, slot)
+        for slot = 1, BagsEnh_GetContainerNumSlots(bag) or 0 do
+            local _, _, locked, _, _, _, link = BagsEnh_GetContainerItemInfo(bag, slot)
             if link and not locked then
                 local cat, _, subCat, equipLoc = BagsEnh_Categorize(link)
                 if cat == catKey
@@ -100,9 +100,9 @@ function BagsEnh_SectionAction(catKey, desc)
                 if SellProtected(quality, ilvl, it.link) then
                     kept = kept + 1             -- au-dessus d'un plafond : on laisse
                 else
-                    local _, count = GetContainerItemInfo(it.bag, it.slot)
+                    local _, count = BagsEnh_GetContainerItemInfo(it.bag, it.slot)
                     gold = gold + sell * (count or 1)
-                    UseContainerItem(it.bag, it.slot)
+                    BagsEnh_UseContainerItem(it.bag, it.slot)
                     n = n + 1
                 end
             end
@@ -118,7 +118,7 @@ function BagsEnh_SectionAction(catKey, desc)
         end
     elseif c == "bank" then
         for _, it in ipairs(slots) do
-            UseContainerItem(it.bag, it.slot)   -- banque ouverte : déplace en banque
+            BagsEnh_UseContainerItem(it.bag, it.slot)   -- banque ouverte : déplace en banque
             n = n + 1
         end
         BagsEnh_Print(n > 0 and ld.ACT_DEPOSITED:format(n) or ld.ACT_NOTHING_DEPOSIT)
@@ -142,7 +142,7 @@ function BagsEnh_SectionWithdraw(catKey, desc)
     local slots = SectionSlots(catKey, desc, BANK_CONTAINERS)
     local n = 0
     for _, it in ipairs(slots) do
-        UseContainerItem(it.bag, it.slot)       -- banque ouverte : renvoie aux sacs
+        BagsEnh_UseContainerItem(it.bag, it.slot)       -- banque ouverte : renvoie aux sacs
         n = n + 1
     end
     BagsEnh_Print(n > 0 and ld.ACT_WITHDRAWN:format(n) or ld.ACT_NOTHING_WITHDRAW)

@@ -347,7 +347,7 @@ local function CreateViewer()
     f:SetSize(BagsEnhDB.bankWidth or 460, BagsEnhDB.bankHeight or 500)
     f:SetPoint("CENTER", (viewerN * 30) % 200 - 100, -(viewerN * 24) % 160 + 40)
     f:SetScale(BagsEnhDB.scale or 1.0)
-    f:SetBackdrop({
+    BagsEnh_Backdrop(f):SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8",
         edgeSize = 1, insets = { left = 1, right = 1, top = 1, bottom = 1 },
     })

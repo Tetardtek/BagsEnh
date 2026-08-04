@@ -13,14 +13,14 @@ local st = { running = false, waiting = false, waitTicks = 0, moves = 0,
 
 
 local function ItemIDAt(bag, slot)
-    local link = GetContainerItemLink(bag, slot)
+    local link = BagsEnh_GetContainerItemLink(bag, slot)
     return link and tonumber(link:match("item:(%d+)"))
 end
 
 local function AnyLockedIn(containers)
     for _, bag in ipairs(containers) do
-        for slot = 1, GetContainerNumSlots(bag) or 0 do
-            local _, _, locked = GetContainerItemInfo(bag, slot)
+        for slot = 1, BagsEnh_GetContainerNumSlots(bag) or 0 do
+            local _, _, locked = BagsEnh_GetContainerItemInfo(bag, slot)
             if locked then return true end
         end
     end
@@ -34,10 +34,10 @@ end
 local function FindMerge(containers)
     local groups = {}
     for _, bag in ipairs(containers) do
-        for slot = 1, GetContainerNumSlots(bag) or 0 do
+        for slot = 1, BagsEnh_GetContainerNumSlots(bag) or 0 do
             local id = ItemIDAt(bag, slot)
             if id then
-                local _, count = GetContainerItemInfo(bag, slot)
+                local _, count = BagsEnh_GetContainerItemInfo(bag, slot)
                 local maxStack = select(8, GetItemInfo(id)) or 1
                 if maxStack > 1 and count then
                     local g = groups[id]
@@ -95,8 +95,8 @@ local function Tick()
     if st.moves > 400 then Finish(BagsEnh_L().SORT_ABORT_STUCK); return end
     local dst, src, amount = FindMerge(st.containers)
     if not dst then Finish(st.label); return end
-    SplitContainerItem(src.bag, src.slot, amount)
-    PickupContainerItem(dst.bag, dst.slot)
+    BagsEnh_SplitContainerItem(src.bag, src.slot, amount)
+    BagsEnh_PickupContainerItem(dst.bag, dst.slot)
     st.waiting = true; st.waitTicks = 0; st.moves = st.moves + 1
 end
 

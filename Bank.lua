@@ -213,10 +213,10 @@ end
 local function CollectCharacter()
     local items, used, total, unresolved = {}, 0, 0, false
     for _, c in ipairs(BankContainers()) do
-        local n = GetContainerNumSlots(c) or 0
+        local n = BagsEnh_GetContainerNumSlots(c) or 0
         total = total + n
         for slot = 1, n do
-            local texture, count, _, quality, _, _, link = GetContainerItemInfo(c, slot)
+            local texture, count, _, quality, _, _, link = BagsEnh_GetContainerItemInfo(c, slot)
             if texture then
                 used = used + 1
                 items[#items + 1] = { link = link, texture = texture, count = count,
@@ -423,9 +423,9 @@ local function BankDeposit()
         end
     else
         for _, c in ipairs(BankContainers()) do
-            for slot = 1, GetContainerNumSlots(c) or 0 do
-                if not GetContainerItemInfo(c, slot) then
-                    PickupContainerItem(c, slot)
+            for slot = 1, BagsEnh_GetContainerNumSlots(c) or 0 do
+                if not BagsEnh_GetContainerItemInfo(c, slot) then
+                    BagsEnh_PickupContainerItem(c, slot)
                     return
                 end
             end
@@ -461,7 +461,7 @@ local function CreateBankFrame()
     bankFrame:SetSize(BagsEnhDB.bankWidth or 460, BagsEnhDB.bankHeight or 500)
     bankFrame:SetPoint("CENTER", BagsEnhDB.bankPosX or 260, BagsEnhDB.bankPosY or 0)
     bankFrame:SetScale(BagsEnhDB.scale or 1.0)
-    bankFrame:SetBackdrop({
+    BagsEnh_Backdrop(bankFrame):SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8",
         edgeSize = 1, insets = { left = 1, right = 1, top = 1, bottom = 1 },
     })
