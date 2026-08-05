@@ -151,6 +151,41 @@ function BagsEnh_StripModernButton(btn)
 end
 
 ---------------------------------------------------------------------------
+-- Menus contextuels
+---------------------------------------------------------------------------
+-- `EasyMenu` a ete retiree des clients recents. Ce n'etait qu'un raccourci de
+-- vingt lignes au-dessus d'UIDropDownMenu — qui, lui, est toujours la : les
+-- menus deroulants des panneaux d'options en dependent et fonctionnent.
+--
+-- On la reimplemente plutot que de viser MenuUtil, l'API moderne : UIDropDownMenu
+-- existe sur les DEUX clients, donc un seul chemin de code au lieu de deux.
+--
+-- Symptome sans ce shim : « attempt to call a nil value » au clic sur le badge
+-- de categorie d'un objet — la seule voie pour reclasser un objet a la main.
+
+function BagsEnh_EasyMenu(menuList, menuFrame, anchor, x, y, displayMode, autoHideDelay)
+    if EasyMenu then
+        return EasyMenu(menuList, menuFrame, anchor, x, y, displayMode, autoHideDelay)
+    end
+    if not UIDropDownMenu_Initialize or not ToggleDropDownMenu then return end
+
+    if displayMode == "MENU" then
+        menuFrame.displayMode = displayMode
+    end
+    UIDropDownMenu_Initialize(menuFrame, function(_, level, list)
+        list = list or menuList
+        for i = 1, table.getn(list) do
+            local entry = list[i]
+            if entry and entry.text then
+                entry.index = i
+                UIDropDownMenu_AddButton(entry, level)
+            end
+        end
+    end, displayMode, nil, menuList)
+    ToggleDropDownMenu(1, nil, menuFrame, anchor, x, y, menuList, nil, autoHideDelay)
+end
+
+---------------------------------------------------------------------------
 -- Backdrop
 ---------------------------------------------------------------------------
 -- Depuis Shadowlands, SetBackdrop n'existe plus sur une frame ordinaire. On

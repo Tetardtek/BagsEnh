@@ -59,7 +59,7 @@ local function ShowItemMenu(btn)
         notCheckable = true,
         func = function() BagsEnh_SetItemOverride(itemID, nil) end,
     }
-    EasyMenu(menu, menuFrame, "cursor", 0, 0, "MENU")
+    BagsEnh_EasyMenu(menu, menuFrame, "cursor", 0, 0, "MENU")
 end
 
 -- ============================================================
