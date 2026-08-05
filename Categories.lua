@@ -245,6 +245,29 @@ local TYPE_TO_CATEGORY = {
     ["Recipe"] = "recipes",
 }
 
+-- Classement par identifiant de classe d'objet, pour les clients qui l'exposent
+-- (12e valeur de GetItemInfo, absente en 3.3.5).
+--
+-- Ces identifiants sont stables depuis WotLK et ne dependent d'aucune langue —
+-- c'est la seule voie fiable sur un client ou GetAuctionItemClasses n'existe
+-- plus. La table par nom ci-dessus reste le chemin 3.3.5.
+local CLASS_ID_TO_CATEGORY = {
+    [0]  = "consumables",   -- Consumable
+    [1]  = "bags",          -- Container
+    [2]  = "equipment",     -- Weapon
+    [3]  = "gems",          -- Gem
+    [4]  = "equipment",     -- Armor
+    [6]  = "consumables",   -- Projectile
+    [7]  = "profession",    -- Trade Goods
+    [9]  = "recipes",       -- Recipe
+    [11] = "equipment",     -- Quiver
+    [12] = "quest",         -- Quest
+    [16] = "glyphs",        -- Glyph
+    -- 15 (Miscellaneous) volontairement absent : laisser retomber sur « misc »
+    -- plutot que d'y envoyer explicitement, pour que les regles suivantes
+    -- gardent leur chance.
+}
+
 local typeMapBuilt = false
 local function BuildTypeMap()
     if typeMapBuilt or not GetAuctionItemClasses then return end
@@ -553,7 +576,7 @@ function BagsEnh_Categorize(link)
         baseCat, subCat, equipLoc = cached[1], cached[2], cached[3]
     else
         BuildTypeMap()
-        local name, _, quality, _, _, itemType, itemSubType, _, eLoc = GetItemInfo(link)
+        local name, _, quality, _, _, itemType, itemSubType, _, eLoc, _, _, classID = GetItemInfo(link)
         if not name then return "misc", false end -- not cached yet, no cache write
 
         local category
@@ -587,6 +610,21 @@ function BagsEnh_Categorize(link)
         end
 
         -- 4. Native item type
+        --
+        -- 🔴 Par classID d'abord quand le client le fournit (12e valeur de
+        -- GetItemInfo, absente en 3.3.5) : c'est un NOMBRE, donc insensible a la
+        -- langue du client.
+        --
+        -- La table par nom, elle, se remplit depuis GetAuctionItemClasses — API
+        -- supprimee des clients modernes. Sur Classic Era elle restait donc vide,
+        -- et comme itemType est localise (« Consommable », « Artisanat »...),
+        -- plus rien ne correspondait : TOUS les objets tombaient dans Divers.
+        -- Les sous-categories fonctionnaient, elles, car itemSubType est affiche
+        -- tel quel — d'ou un « Divers » plein de sections correctes, symptome
+        -- trompeur qui donnait l'impression d'un tri partiel.
+        if not category and classID then
+            category = CLASS_ID_TO_CATEGORY[classID]
+        end
         if not category then
             category = TYPE_TO_CATEGORY[itemType]
         end
