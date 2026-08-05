@@ -3,12 +3,18 @@
 > **[⬇ Download the latest release](https://github.com/Tetardtek/BagsEnh/releases/latest)**
 
 
-A World of Warcraft addon for **Ascension WoW** (3.3.0) that replaces the default
+A World of Warcraft addon for **Ascension WoW** (3.3.0) **and WoW Classic Era
+(1.15+)** that replaces the default
 bags with a single unified window: smart categories, sub-categories for gear and
 trade goods, instant search, physical sorting, categorized **bank** views (incl.
 the guild / personal / realm banks), and full customization — with **no external
 dependencies**. Part of the **Enh** series (sister addon of
 [LootEnh](https://github.com/Tetardtek/LootEnh)).
+
+> **One folder, both clients.** Modern clients read the suffixed
+> `BagsEnh_Vanilla.toc`; the 3.3.5 client only knows `BagsEnh.toc` and ignores it.
+> A compatibility layer (`Compat.lua`) absorbs the API differences at load time —
+> including the container API, which moved to `C_Container` and changed signature.
 
 ## Features
 
