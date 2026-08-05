@@ -202,6 +202,39 @@ end
 local categories = {}
 local rootCategory
 
+-- 🔴 Amorçage du cycle OnShow sur client moderne.
+--
+-- Sur 3.3.5, InterfaceOptions_AddCategory masque le panneau : la premiere
+-- ouverture declenche donc OnShow. Le systeme Settings moderne, lui, REPARENTE
+-- le canvas sans l'avoir cache au prealable — OnShow ne part jamais, et tout
+-- panneau qui se remplit a l'affichage reste vide. Symptome observe : la liste
+-- des icones detectees annoncait « aucune » alors que la boite en affichait six.
+--
+-- Deux filets, parce qu'un panneau d'options muet est un defaut silencieux :
+--   1. on cache le panneau une fois, ce qui retablit le cycle nominal ;
+--   2. on rejoue les OnShow a l'ouverture de la fenetre de reglages, au cas ou
+--      le client n'appellerait pas Show() sur le canvas.
+--
+-- Le second filet couvre aussi la navigation entre sous-categories, ou le canvas
+-- reste affiche pendant qu'on change de page.
+
+local registered = {}
+local settingsHooked = false
+
+local function HookSettingsRefresh()
+    if settingsHooked or not SettingsPanel or not SettingsPanel.HookScript then return end
+    settingsHooked = true
+    SettingsPanel:HookScript("OnShow", function()
+        for i = 1, table.getn(registered) do
+            local p = registered[i]
+            local h = p and p.GetScript and p:GetScript("OnShow")
+            -- pcall : le rafraichissement d'un panneau ne doit pas empecher
+            -- celui des suivants.
+            if h then pcall(h, p) end
+        end
+    end)
+end
+
 function BagsEnh_AddOptionsCategory(panel)
     if not panel or not panel.name then return end
 
@@ -218,6 +251,9 @@ function BagsEnh_AddOptionsCategory(panel)
             rootCategory = rootCategory or cat
         end
         categories[panel.name] = cat
+        registered[table.getn(registered) + 1] = panel
+        panel:Hide()
+        HookSettingsRefresh()
         return cat
     end
 
