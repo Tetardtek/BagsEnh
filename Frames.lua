@@ -87,6 +87,10 @@ local function AcquireButton(bag)
             nt:SetTexture(nil)
             nt:Hide()
         end
+        -- Le gabarit moderne ajoute halo « nouvel objet », bordure de qualite
+        -- native et overlays de contexte. Sans ca, tous les objets ressortent
+        -- cernes de bleu sur Classic Era. Sans effet sur 3.3.5.
+        BagsEnh_StripModernButton(btn)
         btn.beBorder = BagsEnh_CreateIconBorder(btn, icon or btn)
 
         -- Item level (top-right, small) — shown for gear only. Drawn above the

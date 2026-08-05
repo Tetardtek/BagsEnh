@@ -74,6 +74,9 @@ local function AcquireContainerButton(container)
             nt:SetTexture(nil)
             nt:Hide()
         end
+        -- Meme nettoyage que dans Frames.lua : le gabarit moderne ajoute des
+        -- surfaces que 3.3.5 n'avait pas. Sans effet sur le client ancien.
+        BagsEnh_StripModernButton(btn)
         btn.beBorder = BagsEnh_CreateIconBorder(btn, icon or btn)
         local ilvl = btn:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
         ilvl:SetPoint("TOPRIGHT", btn, "TOPRIGHT", -1, -1)

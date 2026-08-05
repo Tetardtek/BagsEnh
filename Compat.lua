@@ -65,10 +65,6 @@ function BagsEnh_GetContainerItemLink(bag, slot)
     return GetContainerItemLink(bag, slot)
 end
 
-function BagsEnh_GetContainerItemID(bag, slot)
-    if CC and CC.GetContainerItemID then return CC.GetContainerItemID(bag, slot) end
-    return GetContainerItemID(bag, slot)
-end
 
 function BagsEnh_UseContainerItem(bag, slot, ...)
     if CC and CC.UseContainerItem then return CC.UseContainerItem(bag, slot, ...) end
@@ -93,6 +89,65 @@ end
 function BagsEnh_ContainerIDToInventoryID(bag)
     if CC and CC.ContainerIDToInventoryID then return CC.ContainerIDToInventoryID(bag) end
     return ContainerIDToInventoryID(bag)
+end
+
+---------------------------------------------------------------------------
+-- Boutons d'objet — nettoyage du gabarit moderne
+---------------------------------------------------------------------------
+-- `ContainerFrameItemButtonTemplate` a beaucoup grossi depuis 3.3.5 : il embarque
+-- des textures et des animations qui n'existaient pas, et que BagsEnh n'eteint
+-- donc jamais. Resultat observe sur Classic Era : tous les objets cernes de bleu,
+-- y compris les communs — le halo « nouvel objet » de Blizzard, qui double celui
+-- que BagsEnh dessine deja.
+--
+-- On ne parie pas sur LA texture coupable : on neutralise la classe entiere.
+-- Chaque test est garde, donc l'appel ne fait rien sur 3.3.5 ou aucune de ces
+-- surfaces n'existe.
+--
+-- 🔴 Ne touche PAS a ce que BagsEnh possede : `beBorder` (sa bordure de qualite)
+-- et son propre halo restent maitres de l'affichage. On ne retire que ce que le
+-- gabarit ajoute dans notre dos.
+
+local MODERN_BUTTON_SURFACES = {
+    "NewItemTexture",        -- halo bleu « nouvel objet » — le coupable observe
+    "BattlepayItemTexture",
+    "IconBorder",            -- bordure de qualite native, doublon de beBorder
+    "IconOverlay",
+    "IconOverlay2",
+    "ItemContextOverlay",
+    "SlotHighlightTexture",
+    "ProfessionQualityOverlay",
+    "flash",
+}
+
+local MODERN_BUTTON_ANIMS = {
+    "newitemglowAnim",
+    "flashAnim",
+}
+
+function BagsEnh_StripModernButton(btn)
+    if not btn then return end
+
+    for i = 1, table.getn(MODERN_BUTTON_SURFACES) do
+        local t = btn[MODERN_BUTTON_SURFACES[i]]
+        if t then
+            if t.SetAlpha then t:SetAlpha(0) end
+            if t.Hide then t:Hide() end
+        end
+    end
+
+    -- Les animations rallument leur texture toute seule : les arreter ne suffit
+    -- pas si elles peuvent redemarrer, d'ou l'alpha a zero ci-dessus en renfort.
+    for i = 1, table.getn(MODERN_BUTTON_ANIMS) do
+        local a = btn[MODERN_BUTTON_ANIMS[i]]
+        if a and a.Stop then a:Stop() end
+    end
+
+    -- Le gabarit moderne expose parfois un raccourci qui rallume la bordure de
+    -- qualite a chaque mise a jour. On le neutralise plutot que de courir apres.
+    if btn.SetItemButtonQuality then
+        btn.SetItemButtonQuality = function() end
+    end
 end
 
 ---------------------------------------------------------------------------
@@ -174,24 +229,6 @@ function BagsEnh_AddOptionsCategory(panel)
     end
 end
 
-function BagsEnh_OpenOptions(panel)
-    local key = panel and panel.name
-    local cat = (key and categories[key]) or rootCategory
-    if not cat then return end
-
-    if C.modern then
-        if Settings.OpenToCategory then
-            Settings.OpenToCategory(cat.GetID and cat:GetID() or cat)
-        end
-        return
-    end
-
-    if InterfaceOptionsFrame_OpenToCategory then
-        -- Double appel : contournement du bug 3.3.5, confine ici.
-        InterfaceOptionsFrame_OpenToCategory(cat)
-        InterfaceOptionsFrame_OpenToCategory(cat)
-    end
-end
 
 ---------------------------------------------------------------------------
 -- Metadonnees d'addon
@@ -207,12 +244,3 @@ function BagsEnh_GetAddOnMetadata(addon, field)
     return nil
 end
 
-function BagsEnh_IsAddOnLoaded(addon)
-    if C_AddOns and C_AddOns.IsAddOnLoaded then
-        return C_AddOns.IsAddOnLoaded(addon)
-    end
-    if IsAddOnLoaded then
-        return IsAddOnLoaded(addon)
-    end
-    return false
-end
