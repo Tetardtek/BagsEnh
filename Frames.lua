@@ -169,6 +169,9 @@ local function AcquireButton(bag)
     else
         btn:SetParent(bagParents[bag])
     end
+    -- Le parent porte l'ID du sac pour le client 3.3.5 ; les gabarits modernes
+    -- le veulent sur le bouton. Sans effet sur l'ancien client.
+    BagsEnh_SetButtonBag(btn, bag)
     activeButtons[#activeButtons + 1] = btn
     return btn
 end

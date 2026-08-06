@@ -151,6 +151,26 @@ function BagsEnh_StripModernButton(btn)
 end
 
 ---------------------------------------------------------------------------
+-- Conteneur d'un bouton d'objet
+---------------------------------------------------------------------------
+-- En 3.3.5, le gestionnaire natif d'infobulle lit le conteneur sur le PARENT du
+-- bouton (`self:GetParent():GetID()`). C'est pourquoi BagsEnh place ses boutons
+-- sous une frame cachée portant l'identifiant du sac.
+--
+-- Les gabarits modernes ne fonctionnent plus ainsi : le bouton porte lui-même
+-- son conteneur, posé par `SetBagID`. Sans cet appel, le gestionnaire natif ne
+-- sait pas quel objet décrire — et l'infobulle ne s'affiche pas.
+--
+-- Constaté sur les objets en banque. À poser au moment de l'ACQUISITION du
+-- bouton, là où le conteneur est connu de façon certaine — pas au rendu, où il
+-- ne l'est pas toujours (un emplacement vide n'a pas d'objet à interroger).
+function BagsEnh_SetButtonBag(btn, bag)
+    if btn and btn.SetBagID and bag then
+        btn:SetBagID(bag)
+    end
+end
+
+---------------------------------------------------------------------------
 -- Menus contextuels
 ---------------------------------------------------------------------------
 -- `EasyMenu` a ete retiree des clients recents. Ce n'etait qu'un raccourci de

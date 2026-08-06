@@ -85,6 +85,7 @@ local function AcquireContainerButton(container)
     else
         btn:SetParent(bankParents[container])
     end
+    BagsEnh_SetButtonBag(btn, container)
     cActive[#cActive + 1] = btn
     return btn
 end
