@@ -196,9 +196,12 @@ function BagsEnh_TipDebug()
         hooksecurefunc(GameTooltip, "ClearLines", function()
             print("|cffff5555[tip] ClearLines|r\n" .. debugstack(2, 4, 0))
         end)
+        -- `SetOwner` REMET L'INFOBULLE A ZERO : c'est lui le coupable quand le
+        -- texte disparaît sans qu'aucun ClearLines n'apparaisse. On veut donc sa
+        -- pile d'appel, pas seulement son propriétaire.
         hooksecurefunc(GameTooltip, "SetOwner", function(_, owner)
             local n = owner and owner.GetName and owner:GetName() or "?"
-            print("|cffffcc00[tip] SetOwner|r " .. tostring(n))
+            print("|cffffcc00[tip] SetOwner|r " .. tostring(n) .. "\n" .. debugstack(2, 4, 0))
         end)
         if GameTooltip.SetHyperlink then
             hooksecurefunc(GameTooltip, "SetHyperlink", function(_, link)
