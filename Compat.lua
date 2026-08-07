@@ -171,6 +171,46 @@ function BagsEnh_SetButtonBag(btn, bag)
 end
 
 ---------------------------------------------------------------------------
+-- Trace d'infobulle — outil de diagnostic
+---------------------------------------------------------------------------
+-- Deux hypothèses successives sur « le texte s'affiche puis disparaît » se sont
+-- révélées fausses (le rafraîchissement natif, puis l'écrasement asynchrone).
+-- Plutôt qu'une troisième, on regarde QUI vide réellement l'infobulle.
+--
+-- `/be tipdebug` puis survoler l'objet fautif : chaque effacement s'annonce avec
+-- la pile d'appel qui l'a provoqué. Le coupable se nomme lui-même.
+--
+-- Volontairement non désactivable et bavard : c'est un instrument, pas une
+-- fonctionnalité. Il ne s'arme que sur demande explicite.
+
+local tipDebugArmed = false
+
+function BagsEnh_TipDebug()
+    if tipDebugArmed then
+        print("|cff66ccffBagsEnh|r trace déjà active.")
+        return
+    end
+    tipDebugArmed = true
+
+    if hooksecurefunc then
+        hooksecurefunc(GameTooltip, "ClearLines", function()
+            print("|cffff5555[tip] ClearLines|r\n" .. debugstack(2, 4, 0))
+        end)
+        hooksecurefunc(GameTooltip, "SetOwner", function(_, owner)
+            local n = owner and owner.GetName and owner:GetName() or "?"
+            print("|cffffcc00[tip] SetOwner|r " .. tostring(n))
+        end)
+        if GameTooltip.SetHyperlink then
+            hooksecurefunc(GameTooltip, "SetHyperlink", function(_, link)
+                print("|cff60ff60[tip] SetHyperlink|r " .. tostring(link))
+            end)
+        end
+    end
+
+    print("|cff66ccffBagsEnh|r trace d'infobulle active — survole l'objet fautif.")
+end
+
+---------------------------------------------------------------------------
 -- Menus contextuels
 ---------------------------------------------------------------------------
 -- `EasyMenu` a ete retiree des clients recents. Ce n'etait qu'un raccourci de
