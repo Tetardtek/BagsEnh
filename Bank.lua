@@ -82,69 +82,6 @@ local function AcquireContainerButton(container)
         ilvl:SetPoint("TOPRIGHT", btn, "TOPRIGHT", -1, -1)
         ilvl:SetShadowColor(0, 0, 0, 1); ilvl:SetShadowOffset(1, -1); ilvl:Hide()
         btn.beIlvl = ilvl
-        -- 🔴 Infobulle par le LIEN de l'objet, et surtout pas par l'emplacement.
-        --
-        -- Les trois surfaces de l'addon ne s'y prenaient pas pareil, et une
-        -- seule était muette :
-        --   sacs       HookScript, le gestionnaire natif reste actif   OK
-        --   Warehouse  handler propre + SetHyperlink                   OK
-        --   banque     rien, tout reposait sur le natif                KO
-        --
-        -- 🔴 Et `SetBagItem` est ASYNCHRONE sur ce client : l'infobulle n'est
-        -- pas remplie à l'appel, elle l'est quand les données reviennent. Une
-        -- première version tentait le natif puis se rabattait sur le lien si
-        -- `NumLines() == 0` ; le repli s'affichait bien, puis la réponse tardive
-        -- du natif l'ÉCRASAIT avec du vide. D'où « le texte apparaît puis
-        -- disparaît, le cadre reste ».
-        --
-        -- Le test de repli était juste, mais posé trop tôt : il mesurait une
-        -- infobulle qui n'avait pas fini de se remplir. La correction n'est pas
-        -- d'ajouter une garde, c'est de ne pas appeler ce dont on n'a pas besoin.
-        --
-        -- `SetHyperlink` suffit, et le Warehouse le prouve sur ce même client
-        -- depuis le début. Bénéfice de bord : ça marcherait aussi hors de portée
-        -- du banquier, là où aucune API d'emplacement ne répond.
-        local function ShowTip(self)
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetHyperlink(self.beLink)
-            GameTooltip:Show()
-        end
-
-        btn:SetScript("OnEnter", function(self)
-            if not self.beLink then return end
-            ShowTip(self)
-        end)
-        btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
-        -- 🔴 Et on la REPOSE tant que la souris est dessus.
-        --
-        -- `BagsEnh_RefreshBank` commence par ReleaseAll() : tous les boutons
-        -- repassent par le pool. Or `PLAYERBANKSLOTS_CHANGED` déclenche ce
-        -- rafraîchissement spontanément, le serveur l'émettant de lui-même.
-        --
-        -- Le bouton survolé est donc libéré sous la souris, l'infobulle perd
-        -- son propriétaire, et le conteneur par défaut du tooltip la reprend en
-        -- la réancrant sur UIParent — ce qui la réinitialise. D'où « le texte
-        -- tient quelques secondes puis disparaît » : le délai n'est pas un
-        -- délai, c'est l'attente du prochain événement de banque.
-        --
-        -- Ce n'est pas un contournement : c'est exactement ce que fait le
-        -- gestionnaire natif, et pour cette raison précise. C'est même pourquoi
-        -- les sacs n'ont jamais eu le problème — ils l'ont conservé.
-        -- 🔴 La condition porte sur AFFICHÉE **et** à nous, pas seulement à nous.
-        --
-        -- Quand ReleaseAll() libère le bouton sous la souris, WoW déclenche son
-        -- OnLeave — donc `GameTooltip:Hide()`. Le bouton revient ensuite,
-        -- recyclé à la même place, et son OnUpdate reprend : mais l'infobulle,
-        -- bien que CACHÉE, nous appartient toujours. Tester la seule propriété
-        -- concluait « rien à faire » et laissait l'écran vide.
-        btn:SetScript("OnUpdate", function(self)
-            if not self.beLink then return end
-            if not self:IsMouseOver() then return end
-            if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then return end
-            ShowTip(self)
-        end)
-
     else
         btn:SetParent(bankParents[container])
     end
