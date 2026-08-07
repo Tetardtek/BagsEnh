@@ -131,10 +131,17 @@ local function AcquireContainerButton(container)
         -- Ce n'est pas un contournement : c'est exactement ce que fait le
         -- gestionnaire natif, et pour cette raison précise. C'est même pourquoi
         -- les sacs n'ont jamais eu le problème — ils l'ont conservé.
+        -- 🔴 La condition porte sur AFFICHÉE **et** à nous, pas seulement à nous.
+        --
+        -- Quand ReleaseAll() libère le bouton sous la souris, WoW déclenche son
+        -- OnLeave — donc `GameTooltip:Hide()`. Le bouton revient ensuite,
+        -- recyclé à la même place, et son OnUpdate reprend : mais l'infobulle,
+        -- bien que CACHÉE, nous appartient toujours. Tester la seule propriété
+        -- concluait « rien à faire » et laissait l'écran vide.
         btn:SetScript("OnUpdate", function(self)
             if not self.beLink then return end
             if not self:IsMouseOver() then return end
-            if GameTooltip:GetOwner() == self then return end
+            if GameTooltip:IsShown() and GameTooltip:GetOwner() == self then return end
             ShowTip(self)
         end)
 
