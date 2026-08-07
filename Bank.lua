@@ -83,8 +83,33 @@ local function AcquireContainerButton(container)
         ilvl:SetShadowColor(0, 0, 0, 1); ilvl:SetShadowOffset(1, -1); ilvl:Hide()
         btn.beIlvl = ilvl
 
-        -- Diagnostic seul : dit QUEL emplacement est survolé. « Le même objet
-        -- marche à un endroit et pas à l'autre » ne peut se trancher qu'ainsi.
+        -- 🔴 L'infobulle passe par UpdateTooltip, pas seulement par OnEnter.
+        --
+        -- Trouvé par la trace, après quatre hypothèses fausses : le GameTooltip
+        -- rappelle lui-même `owner.UpdateTooltip(owner)` pour se rafraîchir
+        -- (GameTooltip.lua -> ContainerFrame_Shared.lua). C'est un TROISIÈME
+        -- mécanisme, distinct du OnEnter et du OnUpdate du bouton — et c'est
+        -- pourquoi remplacer les handlers ne suffisait jamais : la version
+        -- native de UpdateTooltip reprenait la main derrière.
+        --
+        -- Elle appelle SetBagItem, qui ne rend rien pour la banque principale
+        -- (conteneur -1, mesuré en jeu) alors qu'il fonctionne pour les sacs de
+        -- banque (5..11). D'où « certains objets marchent, d'autres non » : ce
+        -- n'était pas l'objet, c'était l'emplacement.
+        --
+        -- On ne lutte pas contre le rafraîchissement : on lui donne notre
+        -- fonction. SetHyperlink, que le Warehouse emploie sans souci depuis le
+        -- début sur ce même client.
+        local function ShowTip(self)
+            if not self.beLink then return end
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetHyperlink(self.beLink)
+            GameTooltip:Show()
+        end
+        btn:SetScript("OnEnter", ShowTip)
+        btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        btn.UpdateTooltip = ShowTip
+
         btn:HookScript("OnEnter", function(self)
             if not BagsEnh_TipDebugArmed() then return end
             print(("|cff66ccff[bank]|r conteneur=%s slot=%s lien=%s")
