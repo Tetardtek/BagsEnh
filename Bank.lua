@@ -82,6 +82,15 @@ local function AcquireContainerButton(container)
         ilvl:SetPoint("TOPRIGHT", btn, "TOPRIGHT", -1, -1)
         ilvl:SetShadowColor(0, 0, 0, 1); ilvl:SetShadowOffset(1, -1); ilvl:Hide()
         btn.beIlvl = ilvl
+
+        -- Diagnostic seul : dit QUEL emplacement est survolé. « Le même objet
+        -- marche à un endroit et pas à l'autre » ne peut se trancher qu'ainsi.
+        btn:HookScript("OnEnter", function(self)
+            if not BagsEnh_TipDebugArmed() then return end
+            print(("|cff66ccff[bank]|r conteneur=%s slot=%s lien=%s")
+                :format(tostring(self.beContainer), tostring(self:GetID()),
+                        tostring(self.beLink and self.beLink:match("%[(.-)%]") or "?")))
+        end)
     else
         btn:SetParent(bankParents[container])
     end
@@ -322,10 +331,10 @@ function BagsEnh_RefreshBank()
         else
             btn = AcquireContainerButton(it.container)
             btn:SetID(it.slot)
-            -- Le lien porte toute l'infobulle. Posé au rendu, où l'objet est
-            -- connu ; le conteneur ne sert plus à rien depuis qu'on n'appelle
-            -- plus SetBagItem.
-            btn.beLink = it.link
+            -- Conteneur et lien, posés au rendu où l'objet est connu.
+            -- Le conteneur ne sert qu'au diagnostic (/be tipdebug) : c'est lui
+            -- qui distingue la banque principale (-1) de ses sacs (5..11).
+            btn.beContainer, btn.beLink = it.container, it.link
             SetItemButtonTexture(btn, it.texture)
             SetItemButtonCount(btn, it.count)
             local icon = _G[btn:GetName() .. "IconTexture"]

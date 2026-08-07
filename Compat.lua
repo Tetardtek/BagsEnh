@@ -185,6 +185,10 @@ end
 
 local tipDebugArmed = false
 
+function BagsEnh_TipDebugArmed()
+    return tipDebugArmed
+end
+
 function BagsEnh_TipDebug()
     if tipDebugArmed then
         print("|cff66ccffBagsEnh|r trace déjà active.")
