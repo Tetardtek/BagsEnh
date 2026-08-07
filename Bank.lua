@@ -106,6 +106,20 @@ local function AcquireContainerButton(container)
             GameTooltip:Show()
         end)
         btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+        -- 🔴 Et on coupe le rafraîchissement natif.
+        --
+        -- Le gabarit moderne repose l'infobulle en continu tant que la souris
+        -- est dessus — c'est ainsi qu'il tient à jour « vous en possédez X », le
+        -- temps de recharge et l'icône d'amélioration. Il rappelle donc
+        -- `SetBagItem`, qui ne répond pas ici, et VIDE ce que le handler
+        -- ci-dessus vient d'écrire : le texte apparaît puis s'efface, ne
+        -- laissant que le cadre.
+        --
+        -- Ce qu'on perd est sans objet dans une banque : aucun temps de
+        -- recharge à suivre, aucune comparaison d'équipement à afficher. Ce
+        -- qu'on gagne, c'est une infobulle qui reste.
+        btn:SetScript("OnUpdate", nil)
     else
         btn:SetParent(bankParents[container])
     end
