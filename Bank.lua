@@ -82,6 +82,30 @@ local function AcquireContainerButton(container)
         ilvl:SetPoint("TOPRIGHT", btn, "TOPRIGHT", -1, -1)
         ilvl:SetShadowColor(0, 0, 0, 1); ilvl:SetShadowOffset(1, -1); ilvl:Hide()
         btn.beIlvl = ilvl
+        -- 🔴 Infobulle explicite : le gestionnaire natif ne répond pas ici.
+        --
+        -- Les trois surfaces de l'addon ne s'y prennent pas pareil : les sacs
+        -- posent un HookScript, donc le natif reste actif et fonctionne ; le
+        -- Warehouse pose son propre handler avec SetHyperlink et fonctionne
+        -- aussi ; la banque de personnage, elle, ne posait RIEN et s'en
+        -- remettait au natif — qui reste muet.
+        --
+        -- Hypothèse : le natif s'en sort avec les conteneurs 0 à 4 (les sacs)
+        -- mais pas avec BANK_CONTAINER (-1). On ne parie pas dessus : on tente
+        -- le chemin natif, et on retombe sur le lien de l'objet dès que la
+        -- première n'a rien produit. `NumLines() == 0` est la seule mesure
+        -- fiable — un pcall réussi ne dit pas que l'infobulle est remplie.
+        btn:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            if GameTooltip.SetBagItem and self.beContainer then
+                pcall(GameTooltip.SetBagItem, GameTooltip, self.beContainer, self:GetID())
+            end
+            if GameTooltip:NumLines() == 0 and self.beLink then
+                GameTooltip:SetHyperlink(self.beLink)
+            end
+            GameTooltip:Show()
+        end)
+        btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
     else
         btn:SetParent(bankParents[container])
     end
@@ -322,6 +346,9 @@ function BagsEnh_RefreshBank()
         else
             btn = AcquireContainerButton(it.container)
             btn:SetID(it.slot)
+            -- L'infobulle en a besoin : le conteneur pour le chemin natif, le
+            -- lien pour le repli. Posés au rendu, où l'objet est connu.
+            btn.beContainer, btn.beLink = it.container, it.link
             SetItemButtonTexture(btn, it.texture)
             SetItemButtonCount(btn, it.count)
             local icon = _G[btn:GetName() .. "IconTexture"]
