@@ -104,24 +104,40 @@ local function AcquireContainerButton(container)
         -- `SetHyperlink` suffit, et le Warehouse le prouve sur ce même client
         -- depuis le début. Bénéfice de bord : ça marcherait aussi hors de portée
         -- du banquier, là où aucune API d'emplacement ne répond.
-        btn:SetScript("OnEnter", function(self)
-            if not self.beLink then return end
+        local function ShowTip(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetHyperlink(self.beLink)
             GameTooltip:Show()
+        end
+
+        btn:SetScript("OnEnter", function(self)
+            if not self.beLink then return end
+            ShowTip(self)
         end)
         btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-        -- Le rafraîchissement natif est coupé pour la même raison.
+        -- 🔴 Et on la REPOSE tant que la souris est dessus.
         --
-        -- Le gabarit repose l'infobulle en continu tant que la souris est
-        -- dessus — c'est ainsi qu'il tient à jour « vous en possédez X », le
-        -- temps de recharge et l'icône d'amélioration. Chacun de ces passages
-        -- rappellerait `SetBagItem` et rejouerait l'écrasement décrit plus haut.
+        -- `BagsEnh_RefreshBank` commence par ReleaseAll() : tous les boutons
+        -- repassent par le pool. Or `PLAYERBANKSLOTS_CHANGED` déclenche ce
+        -- rafraîchissement spontanément, le serveur l'émettant de lui-même.
         --
-        -- Ce qu'on perd est sans objet dans une banque : aucun temps de recharge
-        -- à suivre, aucune comparaison d'équipement à afficher.
-        btn:SetScript("OnUpdate", nil)
+        -- Le bouton survolé est donc libéré sous la souris, l'infobulle perd
+        -- son propriétaire, et le conteneur par défaut du tooltip la reprend en
+        -- la réancrant sur UIParent — ce qui la réinitialise. D'où « le texte
+        -- tient quelques secondes puis disparaît » : le délai n'est pas un
+        -- délai, c'est l'attente du prochain événement de banque.
+        --
+        -- Ce n'est pas un contournement : c'est exactement ce que fait le
+        -- gestionnaire natif, et pour cette raison précise. C'est même pourquoi
+        -- les sacs n'ont jamais eu le problème — ils l'ont conservé.
+        btn:SetScript("OnUpdate", function(self)
+            if not self.beLink then return end
+            if not self:IsMouseOver() then return end
+            if GameTooltip:GetOwner() == self then return end
+            ShowTip(self)
+        end)
+
     else
         btn:SetParent(bankParents[container])
     end
