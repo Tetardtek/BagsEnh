@@ -82,43 +82,45 @@ local function AcquireContainerButton(container)
         ilvl:SetPoint("TOPRIGHT", btn, "TOPRIGHT", -1, -1)
         ilvl:SetShadowColor(0, 0, 0, 1); ilvl:SetShadowOffset(1, -1); ilvl:Hide()
         btn.beIlvl = ilvl
-        -- 🔴 Infobulle explicite : le gestionnaire natif ne répond pas ici.
+        -- 🔴 Infobulle par le LIEN de l'objet, et surtout pas par l'emplacement.
         --
-        -- Les trois surfaces de l'addon ne s'y prennent pas pareil : les sacs
-        -- posent un HookScript, donc le natif reste actif et fonctionne ; le
-        -- Warehouse pose son propre handler avec SetHyperlink et fonctionne
-        -- aussi ; la banque de personnage, elle, ne posait RIEN et s'en
-        -- remettait au natif — qui reste muet.
+        -- Les trois surfaces de l'addon ne s'y prenaient pas pareil, et une
+        -- seule était muette :
+        --   sacs       HookScript, le gestionnaire natif reste actif   OK
+        --   Warehouse  handler propre + SetHyperlink                   OK
+        --   banque     rien, tout reposait sur le natif                KO
         --
-        -- Hypothèse : le natif s'en sort avec les conteneurs 0 à 4 (les sacs)
-        -- mais pas avec BANK_CONTAINER (-1). On ne parie pas dessus : on tente
-        -- le chemin natif, et on retombe sur le lien de l'objet dès que la
-        -- première n'a rien produit. `NumLines() == 0` est la seule mesure
-        -- fiable — un pcall réussi ne dit pas que l'infobulle est remplie.
+        -- 🔴 Et `SetBagItem` est ASYNCHRONE sur ce client : l'infobulle n'est
+        -- pas remplie à l'appel, elle l'est quand les données reviennent. Une
+        -- première version tentait le natif puis se rabattait sur le lien si
+        -- `NumLines() == 0` ; le repli s'affichait bien, puis la réponse tardive
+        -- du natif l'ÉCRASAIT avec du vide. D'où « le texte apparaît puis
+        -- disparaît, le cadre reste ».
+        --
+        -- Le test de repli était juste, mais posé trop tôt : il mesurait une
+        -- infobulle qui n'avait pas fini de se remplir. La correction n'est pas
+        -- d'ajouter une garde, c'est de ne pas appeler ce dont on n'a pas besoin.
+        --
+        -- `SetHyperlink` suffit, et le Warehouse le prouve sur ce même client
+        -- depuis le début. Bénéfice de bord : ça marcherait aussi hors de portée
+        -- du banquier, là où aucune API d'emplacement ne répond.
         btn:SetScript("OnEnter", function(self)
+            if not self.beLink then return end
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            if GameTooltip.SetBagItem and self.beContainer then
-                pcall(GameTooltip.SetBagItem, GameTooltip, self.beContainer, self:GetID())
-            end
-            if GameTooltip:NumLines() == 0 and self.beLink then
-                GameTooltip:SetHyperlink(self.beLink)
-            end
+            GameTooltip:SetHyperlink(self.beLink)
             GameTooltip:Show()
         end)
         btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-        -- 🔴 Et on coupe le rafraîchissement natif.
+        -- Le rafraîchissement natif est coupé pour la même raison.
         --
-        -- Le gabarit moderne repose l'infobulle en continu tant que la souris
-        -- est dessus — c'est ainsi qu'il tient à jour « vous en possédez X », le
-        -- temps de recharge et l'icône d'amélioration. Il rappelle donc
-        -- `SetBagItem`, qui ne répond pas ici, et VIDE ce que le handler
-        -- ci-dessus vient d'écrire : le texte apparaît puis s'efface, ne
-        -- laissant que le cadre.
+        -- Le gabarit repose l'infobulle en continu tant que la souris est
+        -- dessus — c'est ainsi qu'il tient à jour « vous en possédez X », le
+        -- temps de recharge et l'icône d'amélioration. Chacun de ces passages
+        -- rappellerait `SetBagItem` et rejouerait l'écrasement décrit plus haut.
         --
-        -- Ce qu'on perd est sans objet dans une banque : aucun temps de
-        -- recharge à suivre, aucune comparaison d'équipement à afficher. Ce
-        -- qu'on gagne, c'est une infobulle qui reste.
+        -- Ce qu'on perd est sans objet dans une banque : aucun temps de recharge
+        -- à suivre, aucune comparaison d'équipement à afficher.
         btn:SetScript("OnUpdate", nil)
     else
         btn:SetParent(bankParents[container])
@@ -360,9 +362,10 @@ function BagsEnh_RefreshBank()
         else
             btn = AcquireContainerButton(it.container)
             btn:SetID(it.slot)
-            -- L'infobulle en a besoin : le conteneur pour le chemin natif, le
-            -- lien pour le repli. Posés au rendu, où l'objet est connu.
-            btn.beContainer, btn.beLink = it.container, it.link
+            -- Le lien porte toute l'infobulle. Posé au rendu, où l'objet est
+            -- connu ; le conteneur ne sert plus à rien depuis qu'on n'appelle
+            -- plus SetBagItem.
+            btn.beLink = it.link
             SetItemButtonTexture(btn, it.texture)
             SetItemButtonCount(btn, it.count)
             local icon = _G[btn:GetName() .. "IconTexture"]
