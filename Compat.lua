@@ -158,63 +158,17 @@ end
 -- sous une frame cachée portant l'identifiant du sac.
 --
 -- Les gabarits modernes ne fonctionnent plus ainsi : le bouton porte lui-même
--- son conteneur, posé par `SetBagID`. Sans cet appel, le gestionnaire natif ne
--- sait pas quel objet décrire — et l'infobulle ne s'affiche pas.
+-- son conteneur, posé par `SetBagID`. Sans cet appel, tout ce qui repose sur le
+-- comportement natif — clic pour prendre ou déposer, déplacement — interroge un
+-- conteneur inconnu.
 --
--- Constaté sur les objets en banque. À poser au moment de l'ACQUISITION du
--- bouton, là où le conteneur est connu de façon certaine — pas au rendu, où il
--- ne l'est pas toujours (un emplacement vide n'a pas d'objet à interroger).
+-- À poser au moment de l'ACQUISITION du bouton, là où le conteneur est connu de
+-- façon certaine — pas au rendu, où il ne l'est pas toujours (un emplacement
+-- vide n'a pas d'objet à interroger).
 function BagsEnh_SetButtonBag(btn, bag)
     if btn and btn.SetBagID and bag then
         btn:SetBagID(bag)
     end
-end
-
----------------------------------------------------------------------------
--- Trace d'infobulle — outil de diagnostic
----------------------------------------------------------------------------
--- Deux hypothèses successives sur « le texte s'affiche puis disparaît » se sont
--- révélées fausses (le rafraîchissement natif, puis l'écrasement asynchrone).
--- Plutôt qu'une troisième, on regarde QUI vide réellement l'infobulle.
---
--- `/be tipdebug` puis survoler l'objet fautif : chaque effacement s'annonce avec
--- la pile d'appel qui l'a provoqué. Le coupable se nomme lui-même.
---
--- Volontairement non désactivable et bavard : c'est un instrument, pas une
--- fonctionnalité. Il ne s'arme que sur demande explicite.
-
-local tipDebugArmed = false
-
-function BagsEnh_TipDebugArmed()
-    return tipDebugArmed
-end
-
-function BagsEnh_TipDebug()
-    if tipDebugArmed then
-        print("|cff66ccffBagsEnh|r trace déjà active.")
-        return
-    end
-    tipDebugArmed = true
-
-    if hooksecurefunc then
-        hooksecurefunc(GameTooltip, "ClearLines", function()
-            print("|cffff5555[tip] ClearLines|r\n" .. debugstack(2, 4, 0))
-        end)
-        -- `SetOwner` REMET L'INFOBULLE A ZERO : c'est lui le coupable quand le
-        -- texte disparaît sans qu'aucun ClearLines n'apparaisse. On veut donc sa
-        -- pile d'appel, pas seulement son propriétaire.
-        hooksecurefunc(GameTooltip, "SetOwner", function(_, owner)
-            local n = owner and owner.GetName and owner:GetName() or "?"
-            print("|cffffcc00[tip] SetOwner|r " .. tostring(n) .. "\n" .. debugstack(2, 4, 0))
-        end)
-        if GameTooltip.SetHyperlink then
-            hooksecurefunc(GameTooltip, "SetHyperlink", function(_, link)
-                print("|cff60ff60[tip] SetHyperlink|r " .. tostring(link))
-            end)
-        end
-    end
-
-    print("|cff66ccffBagsEnh|r trace d'infobulle active — survole l'objet fautif.")
 end
 
 ---------------------------------------------------------------------------

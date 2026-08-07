@@ -185,8 +185,6 @@ SlashCmdList["BAGSENH"] = function(msg)
         if BagsEnh_ClearCache then BagsEnh_ClearCache() end
     elseif msg == "debug" then
         BagsEnh_DebugDump()
-    elseif msg == "tipdebug" then
-        BagsEnh_TipDebug()
     elseif msg == "reset" then
         BagsEnhDB.posX, BagsEnhDB.posY = 0, 0
         if BagsEnhFrame then

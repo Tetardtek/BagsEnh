@@ -85,21 +85,16 @@ local function AcquireContainerButton(container)
 
         -- 🔴 L'infobulle passe par UpdateTooltip, pas seulement par OnEnter.
         --
-        -- Trouvé par la trace, après quatre hypothèses fausses : le GameTooltip
-        -- rappelle lui-même `owner.UpdateTooltip(owner)` pour se rafraîchir
-        -- (GameTooltip.lua -> ContainerFrame_Shared.lua). C'est un TROISIÈME
-        -- mécanisme, distinct du OnEnter et du OnUpdate du bouton — et c'est
-        -- pourquoi remplacer les handlers ne suffisait jamais : la version
-        -- native de UpdateTooltip reprenait la main derrière.
+        -- Le GameTooltip rappelle lui-meme `owner.UpdateTooltip(owner)` pour se
+        -- rafraichir. C'est un mecanisme distinct du OnEnter et du OnUpdate :
+        -- remplacer les seuls handlers ne suffit pas, la version native reprend
+        -- la main derriere et appelle SetBagItem — muet pour la banque
+        -- principale (conteneur -1), fonctionnel pour ses sacs (5..11). D'ou un
+        -- symptome par EMPLACEMENT et non par objet.
         --
-        -- Elle appelle SetBagItem, qui ne rend rien pour la banque principale
-        -- (conteneur -1, mesuré en jeu) alors qu'il fonctionne pour les sacs de
-        -- banque (5..11). D'où « certains objets marchent, d'autres non » : ce
-        -- n'était pas l'objet, c'était l'emplacement.
-        --
-        -- On ne lutte pas contre le rafraîchissement : on lui donne notre
-        -- fonction. SetHyperlink, que le Warehouse emploie sans souci depuis le
-        -- début sur ce même client.
+        -- On ne lutte pas contre le rafraichissement : on lui donne notre
+        -- fonction. SetHyperlink, que le Warehouse emploie sans souci sur ce
+        -- meme client.
         local function ShowTip(self)
             if not self.beLink then return end
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -109,13 +104,6 @@ local function AcquireContainerButton(container)
         btn:SetScript("OnEnter", ShowTip)
         btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
         btn.UpdateTooltip = ShowTip
-
-        btn:HookScript("OnEnter", function(self)
-            if not BagsEnh_TipDebugArmed() then return end
-            print(("|cff66ccff[bank]|r conteneur=%s slot=%s lien=%s")
-                :format(tostring(self.beContainer), tostring(self:GetID()),
-                        tostring(self.beLink and self.beLink:match("%[(.-)%]") or "?")))
-        end)
     else
         btn:SetParent(bankParents[container])
     end
@@ -356,10 +344,8 @@ function BagsEnh_RefreshBank()
         else
             btn = AcquireContainerButton(it.container)
             btn:SetID(it.slot)
-            -- Conteneur et lien, posés au rendu où l'objet est connu.
-            -- Le conteneur ne sert qu'au diagnostic (/be tipdebug) : c'est lui
-            -- qui distingue la banque principale (-1) de ses sacs (5..11).
-            btn.beContainer, btn.beLink = it.container, it.link
+            -- Le lien porte toute l'infobulle. Pose au rendu, ou l'objet est connu.
+            btn.beLink = it.link
             SetItemButtonTexture(btn, it.texture)
             SetItemButtonCount(btn, it.count)
             local icon = _G[btn:GetName() .. "IconTexture"]
