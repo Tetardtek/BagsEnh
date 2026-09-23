@@ -125,7 +125,7 @@ function BagsEnh_CreateCategoriesPanel()
             userChild.empty:SetPoint("TOPLEFT", 4, -4)
             userChild.empty:SetWidth(340)
             userChild.empty:SetJustifyH("LEFT")
-            userChild.empty:SetText(ld.CAT_NONE_YET)
+            userChild.empty:SetText(BagsEnh_FOREVER and ld.CAT_NONE_YET_FOREVER or ld.CAT_NONE_YET)
             userChild.empty:Show()
         elseif userChild.empty then
             userChild.empty:Hide()
@@ -262,7 +262,10 @@ function BagsEnh_CreateCategoriesPanel()
 
     local add = CreateFrame("Button", nil, P, "UIPanelButtonTemplate")
     add:SetSize(60, 22)
-    add:SetPoint("TOPLEFT", 320, -344)
+    -- Ancre au bord droit de la liste, pas a une abscisse fixe : la liste
+    -- deroulante des clients modernes est plus large que celle de 3.3.5, et
+    -- recouvrait le bouton sur Forever (capture du 23/09).
+    add:SetPoint("LEFT", dd, "RIGHT", -12, 2)
     add:SetText(ld.CAT_ADD)
     add:SetScript("OnClick", function()
         local pat = edit:GetText()
