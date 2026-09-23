@@ -327,8 +327,13 @@ end
 -- new BagsEnh version never loses a section).
 function BagsEnh_GetOrderableCategories()
     local default, valid = {}, {}
+    -- Categories qu'un client ne peut pas remplir (Forever n'a ni Worldforged
+    -- ni parchemins mystiques) : ni ordonnables, ni proposees. Filtrees ICI,
+    -- a la source, pour que le deplacement haut/bas n'echange jamais une
+    -- categorie avec une voisine invisible. nil hors Forever.
+    local absentes = BagsEnh_ABSENT_CATEGORIES or {}
     for _, c in ipairs(BagsEnh_CATEGORY_ORDER) do
-        if not IsFixed(c) then
+        if not IsFixed(c) and not absentes[c] then
             -- promoted trade-goods subtypes sit just before the profession bucket
             if c == "profession" then
                 for _, sub in ipairs(BagsEnh_ProfSubtypes()) do
