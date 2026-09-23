@@ -15,8 +15,8 @@
 # Cette liste N'EST PAS celle des deux autres .toc, et c'est voulu :
 # sur Forever, BagsEnh ne remplace pas le sac du jeu, il le complete.
 # N'y entrent que le moteur de classement (Compat, Locales, Defaults,
-# Utils, Categories) et les deux panneaux qui le reglent (Panel_Categories,
-# Panel_Order). Aucun fichier d'affichage, de banque ou de remplacement
+# Utils, Categories), les actions de section (Actions : vendre, deposer)
+# et les deux panneaux qui le reglent (Panel_Categories, Panel_Order). Aucun fichier d'affichage, de banque ou de remplacement
 # d'API (Hooks) ne doit y entrer.
 
 Compat.lua
@@ -24,6 +24,7 @@ Locales.lua
 Defaults.lua
 Utils.lua
 Categories.lua
+Actions.lua
 Panel_Categories.lua
 Panel_Order.lua
 Forever.lua

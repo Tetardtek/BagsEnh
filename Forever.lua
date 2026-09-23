@@ -271,8 +271,47 @@ local function Bascule(x, y, texte)
     bascule:Show()
 end
 
+-- ── En-tetes de categorie : vendre ou deposer la section ───────────────
+--
+-- Des boutons A NOUS (enfants du calque) : le Ctrl + clic declenche
+-- BagsEnh_SectionAction (Actions.lua), le meme moteur que sur 3.3.5 et Era,
+-- avec ses garde-fous de vente. Les boutons d'objets du jeu n'y sont pour rien.
+local entetesCat = {}
+local nbEntetesCat = 0
+
+local function EnteteCategorie(x, y, texte, cat, r, g, b)
+    nbEntetesCat = nbEntetesCat + 1
+    local bt = entetesCat[nbEntetesCat]
+    if not bt then
+        bt = CreateFrame("Button", nil, calque)
+        bt:SetNormalFontObject("GameFontNormalSmall")
+        bt:SetScript("OnClick", function(self)
+            if BagsEnh_ActionModifierDown() then BagsEnh_SectionAction(self.cat) end
+        end)
+        bt:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(self:GetText())
+            GameTooltip:AddLine(BagsEnh_L().FOREVER_HEADER_TIP, 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+        bt:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        entetesCat[nbEntetesCat] = bt
+    end
+    bt.cat = cat
+    bt:SetText(texte)
+    local fs = bt:GetFontString()
+    fs:SetTextColor(r or 1, g or 1, b or 1)
+    fs:ClearAllPoints()
+    fs:SetPoint("LEFT")
+    bt:SetSize(fs:GetStringWidth() + 4, HEADER_H)
+    bt:ClearAllPoints()
+    bt:SetPoint("TOPLEFT", sac, "TOPLEFT", x, -y)
+    bt:Show()
+end
+
 local function Disposer()
     nbTextes = 0
+    nbEntetesCat = 0
     if not VueActive() then
         calque:Hide()
         hauteur = nil
@@ -334,7 +373,7 @@ local function Disposer()
     for _, cat in ipairs(Ordre(groupes)) do
         local items = groupes[cat]
         local r, g, b = BagsEnh_CategoryColor(cat)
-        Texte(TOP_X, y, BagsEnh_CategoryLabel(cat) .. " (" .. #items .. ")", nil, r, g, b)
+        EnteteCategorie(TOP_X, y, BagsEnh_CategoryLabel(cat) .. " (" .. #items .. ")", cat, r, g, b)
         y = y + HEADER_H
         local mode = BagsEnh_GroupingFor(cat)
         if mode then
@@ -363,7 +402,7 @@ local function Disposer()
         y = y + HEADER_H
         if voirMasques then
             local r, g, b = BagsEnh_CategoryColor("hidden")
-            Texte(TOP_X, y, BagsEnh_CategoryLabel("hidden") .. " (" .. #masques .. ")", nil, r, g, b)
+            EnteteCategorie(TOP_X, y, BagsEnh_CategoryLabel("hidden") .. " (" .. #masques .. ")", "hidden", r, g, b)
             y = y + HEADER_H
             table.sort(masques, BagsEnh_CmpMaterialFirst)
             y = Grille(masques, y)
@@ -378,6 +417,7 @@ local function Disposer()
     end
 
     for i = nbTextes + 1, #textes do textes[i]:Hide() end
+    for i = nbEntetesCat + 1, #entetesCat do entetesCat[i]:Hide() end
     calque:Show()
 
     -- Meme calcul que CalculateHeight du jeu, avec nos en-tetes en plus.
@@ -427,6 +467,19 @@ local function Sonde()
     for _, e in ipairs(erreurs) do print("    " .. e) end
 end
 
+-- Depot en banque sur Forever (appele par BagsEnh_SectionAction). Rend :
+--   true            -> laisser l'objet (remboursable vers la banque de compte :
+--                      le client demande confirmation, un depot groupe non)
+--   false, bankType -> deposer, dans le type de banque actif — comme le fait
+--                      le clic droit natif (ContainerFrame.lua:1602).
+function BagsEnh_ForeverBankDeposit(bag, slot)
+    local loc = ItemLocation:CreateFromBagAndSlot(bag, slot)
+    if BankUtil_IsAccountBankDepositRefundable and BankUtil_IsAccountBankDepositRefundable(loc) then
+        return true
+    end
+    return false, BankFrame and BankFrame.GetActiveBankType and BankFrame:GetActiveBankType()
+end
+
 -- Tout ce qui change un classement (menu d'objet, panneaux, regles)
 -- appelle BagsEnh_MarkDirty. Core.lua, qui la definit ailleurs, n'est pas
 -- charge sur Forever : ici, marquer sale, c'est refaire la vue.
@@ -471,6 +524,12 @@ f:RegisterEvent("PLAYER_LOGIN")
 f:RegisterEvent("BAG_UPDATE_DELAYED")
 f:RegisterEvent("BAG_CONTAINER_UPDATE")
 f:RegisterEvent("GET_ITEM_INFO_RECEIVED")
+-- Contexte des actions de section : Core.lua le tient sur 3.3.5 et Era,
+-- il n'est pas charge ici.
+f:RegisterEvent("MERCHANT_SHOW")
+f:RegisterEvent("MERCHANT_CLOSED")
+f:RegisterEvent("BANKFRAME_OPENED")
+f:RegisterEvent("BANKFRAME_CLOSED")
 f:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" then
         if arg1 ~= "BagsEnh" then return end
@@ -508,6 +567,10 @@ f:SetScript("OnEvent", function(self, event, arg1)
             if not ok then table.insert(erreurs, tostring(err)) end
         end
 
+    elseif event == "MERCHANT_SHOW" or event == "MERCHANT_CLOSED" then
+        BagsEnh_SetMerchantOpen(event == "MERCHANT_SHOW")
+    elseif event == "BANKFRAME_OPENED" or event == "BANKFRAME_CLOSED" then
+        BagsEnh_SetBankOpen(event == "BANKFRAME_OPENED")
     elseif event == "PLAYER_LOGIN" then
         local n = 0
         if type(BagsEnhDB) == "table" then for _ in pairs(BagsEnhDB) do n = n + 1 end end

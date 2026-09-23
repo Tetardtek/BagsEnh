@@ -11,6 +11,10 @@
 -- de le déclencher sur les bons slots, avec les gardes de contexte.
 -- ============================================================
 
+-- Pas de GetItemInfo global sur WoW Forever : alias LOCAL, jamais _G (voir
+-- Categories.lua). Sur 3.3.5 et Era, le global existe et gagne.
+local GetItemInfo = GetItemInfo or (C_Item and C_Item.GetItemInfo)
+
 local BAGS = { 0, 1, 2, 3, 4 }
 local ctx = { merchant = false, bank = false, gbank = false }
 
@@ -117,11 +121,25 @@ function BagsEnh_SectionAction(catKey, desc)
                                     or ld.ACT_NOTHING_SELL)
         end
     elseif c == "bank" then
+        -- Forever (banque a onglets) fournit BagsEnh_ForeverBankDeposit : le
+        -- type de banque actif, et le refus de deposer un objet remboursable
+        -- dans la banque de compte — le client natif demande confirmation,
+        -- un depot groupe ne peut pas la demander pour chaque objet.
+        local kept = 0
         for _, it in ipairs(slots) do
-            BagsEnh_UseContainerItem(it.bag, it.slot)   -- banque ouverte : déplace en banque
-            n = n + 1
+            local skip, bankType
+            if BagsEnh_ForeverBankDeposit then
+                skip, bankType = BagsEnh_ForeverBankDeposit(it.bag, it.slot)
+            end
+            if skip then
+                kept = kept + 1
+            else
+                BagsEnh_UseContainerItem(it.bag, it.slot, nil, bankType)   -- banque ouverte : déplace en banque
+                n = n + 1
+            end
         end
         BagsEnh_Print(n > 0 and ld.ACT_DEPOSITED:format(n) or ld.ACT_NOTHING_DEPOSIT)
+        if kept > 0 then BagsEnh_Print(ld.ACT_DEPOSIT_KEPT:format(kept)) end
     end
 end
 
