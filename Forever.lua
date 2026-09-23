@@ -222,8 +222,11 @@ local function MenuObjet(bouton)
                     cat)
             end
         end
+        racine:CreateDivider()
+        racine:CreateRadio(ld.MENU_HIDE,
+            function() return Actuelle() == "hidden" end,
+            function() BagsEnh_SetItemOverride(itemID, "hidden") end)
         if Actuelle() then
-            racine:CreateDivider()
             racine:CreateButton(ld.MENU_RESET, function() BagsEnh_SetItemOverride(itemID, nil) end)
         end
     end)
@@ -238,6 +241,35 @@ end
 -- Les boutons viennent d'un pool du jeu : on accroche chacun la premiere
 -- fois qu'on le voit. Table a cles faibles, pour ne rien retenir.
 local accroches = setmetatable({}, { __mode = "k" })
+
+-- ── Objets masques ─────────────────────────────────────────────────────
+--
+-- Ceux qu'on porte en permanence sans les consulter (pierre de foyer...).
+-- Un bouton du jeu ne se cache PAS par Hide() : son script OnHide partirait
+-- depuis notre code, et le marquerait. On le pose hors de l'ecran — SetPoint
+-- seulement, comme tout le reste de la greffe, aucun script declenche.
+local HORS_ECRAN = -100000
+
+local bascule      -- notre ligne « Voir masques (N) » / « Replier les masques »
+
+local function Bascule(x, y, texte)
+    if not bascule then
+        bascule = CreateFrame("Button", nil, calque)
+        bascule:SetNormalFontObject("GameFontHighlightSmall")
+        bascule:SetHighlightFontObject("GameFontNormalSmall")
+        bascule:SetScript("OnClick", function()
+            BagsEnhDB.showHidden = not BagsEnhDB.showHidden
+            -- Replanifier est declaree plus bas : BagsEnh_MarkDirty y mene.
+            BagsEnh_MarkDirty()
+        end)
+    end
+    bascule:SetText(texte)
+    bascule:SetSize(bascule:GetFontString():GetStringWidth() + 4, HEADER_H)
+    bascule:GetFontString():SetPoint("LEFT")
+    bascule:ClearAllPoints()
+    bascule:SetPoint("TOPLEFT", sac, "TOPLEFT", x, -y)
+    bascule:Show()
+end
 
 local function Disposer()
     nbTextes = 0
@@ -286,6 +318,18 @@ local function Disposer()
         return y
     end
 
+    -- Les masques sortent du rendu general : ils ont leur place a eux,
+    -- apres toutes les categories, et seulement si on demande a les voir.
+    local masques = groupes.hidden or {}
+    groupes.hidden = nil
+    local voirMasques = BagsEnhDB.showHidden and true or false
+    if not voirMasques then
+        for _, item in ipairs(masques) do
+            item.bouton:ClearAllPoints()
+            item.bouton:SetPoint("TOPLEFT", sac, "TOPLEFT", HORS_ECRAN, 0)
+        end
+    end
+
     local y = TOP_Y
     for _, cat in ipairs(Ordre(groupes)) do
         local items = groupes[cat]
@@ -312,6 +356,20 @@ local function Disposer()
             table.sort(items, BagsEnh_CmpMaterialFirst)
             y = Grille(items, y)
         end
+    end
+    if #masques > 0 then
+        local ld = BagsEnh_L()
+        Bascule(TOP_X, y, voirMasques and ld.BTN_HIDE_HIDDEN or ld.BTN_SHOW_HIDDEN:format(#masques))
+        y = y + HEADER_H
+        if voirMasques then
+            local r, g, b = BagsEnh_CategoryColor("hidden")
+            Texte(TOP_X, y, BagsEnh_CategoryLabel("hidden") .. " (" .. #masques .. ")", nil, r, g, b)
+            y = y + HEADER_H
+            table.sort(masques, BagsEnh_CmpMaterialFirst)
+            y = Grille(masques, y)
+        end
+    elseif bascule then
+        bascule:Hide()
     end
     if #libres > 0 then
         Texte(TOP_X, y, BagsEnh_L().SECTION_FREE .. " (" .. #libres .. ")", nil, 0.6, 0.6, 0.6)
