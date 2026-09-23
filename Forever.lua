@@ -50,8 +50,19 @@ local hauteur      -- derniere hauteur posee par la vue, nil hors vue
 -- ECRIT les SavedVariables mais ne les RELIT plus — mesure le 23/09 sur
 -- BagsEnh et sur MapEnh (temoin), defaut connu et remonte a Blizzard.
 -- Sans ce defaut, la vue disparaitrait a chaque /reload.
+--
+-- Et elle s'efface devant un addon qui REMPLACE le sac du jeu : la
+-- fenetre qu'on greffe n'est alors plus celle qu'on voit. Releve a
+-- PLAYER_LOGIN, quand tous les addons sont charges (tweaks-forever fait
+-- de meme, audit du 23/09).
+local REMPLACANTS = {
+    "Baganator", "Bagnon", "Bagnonium", "BetterBags", "ArkInventory",
+    "AdiBags", "Combuctor", "Inventorian", "LiteBag", "Sorted", "cargBags_Nivaya",
+}
+local remplacant   -- nom de l'addon qui a pris le sac, nil sinon
+
 local function VueActive()
-    return BagsEnhDB ~= nil and BagsEnhDB.foreverVue ~= false
+    return BagsEnhDB ~= nil and BagsEnhDB.foreverVue ~= false and not remplacant
 end
 
 -- largeur : nil = libre (en-tete de categorie) ; sinon le texte est coupe
@@ -279,26 +290,57 @@ end
 local entetesCat = {}
 local nbEntetesCat = 0
 
-local function EnteteCategorie(x, y, texte, cat)
+-- Repliee ? Cle BagsEnhDB.collapsed, la meme que la fenetre BagsEnh.
+local function Repliee(cat)
+    return BagsEnhDB.collapsed and BagsEnhDB.collapsed[cat] and true or false
+end
+
+-- largeur : toute la rangee. L'icone +/- est celle que Forever pose sur
+-- ses propres en-tetes repliables (Competences, Reputation :
+-- camelot/skillsframe.lua), a droite de la ligne, comme chez lui.
+-- repliable : false pour « Masques », qui a deja sa bascule.
+local function EnteteCategorie(x, y, texte, cat, largeur, repliable)
     nbEntetesCat = nbEntetesCat + 1
     local bt = entetesCat[nbEntetesCat]
     if not bt then
         bt = CreateFrame("Button", nil, calque)
         bt:SetNormalFontObject("GameFontNormalSmall")
+        bt.icone = bt:CreateTexture(nil, "ARTWORK")
+        bt.icone:SetPoint("RIGHT", -2, 0)
         bt:SetScript("OnClick", function(self)
-            if BagsEnh_ActionModifierDown() then BagsEnh_SectionAction(self.cat) end
+            if BagsEnh_ActionModifierDown() then
+                -- Les cases libres n'ont rien a vendre ni a deposer.
+                if self.cat ~= "free" then BagsEnh_SectionAction(self.cat) end
+            elseif self.repliable then
+                BagsEnhDB.collapsed = BagsEnhDB.collapsed or {}
+                BagsEnhDB.collapsed[self.cat] = not Repliee(self.cat) or nil
+                BagsEnh_MarkDirty()
+            end
         end)
         bt:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText(self:GetText())
-            GameTooltip:AddLine(BagsEnh_L().FOREVER_HEADER_TIP, 1, 1, 1, true)
+            if self.repliable then
+                GameTooltip:AddLine(BagsEnh_L().FOREVER_HEADER_COLLAPSE, 1, 1, 1, true)
+            end
+            if self.cat ~= "free" then
+                GameTooltip:AddLine(BagsEnh_L().FOREVER_HEADER_TIP, 1, 1, 1, true)
+            end
             GameTooltip:Show()
         end)
         bt:SetScript("OnLeave", function() GameTooltip:Hide() end)
         entetesCat[nbEntetesCat] = bt
     end
     bt.cat = cat
+    bt.repliable = repliable
     bt:SetText(texte)
+    if repliable then
+        bt.icone:SetAtlas(Repliee(cat) and "common-button-list-plus" or "common-button-list-minus",
+            TextureKitConstants.UseAtlasSize)
+        bt.icone:Show()
+    else
+        bt.icone:Hide()
+    end
     local fs = bt:GetFontString()
     -- L'or des titres de section du jeu (NORMAL_FONT_COLOR), pas une couleur
     -- par categorie : la vue doit se lire comme une fenetre de Blizzard
@@ -307,7 +349,7 @@ local function EnteteCategorie(x, y, texte, cat)
     fs:SetTextColor(NORMAL_FONT_COLOR:GetRGB())
     fs:ClearAllPoints()
     fs:SetPoint("LEFT")
-    bt:SetSize(fs:GetStringWidth() + 4, HEADER_H)
+    bt:SetSize(largeur, HEADER_H)
     bt:ClearAllPoints()
     bt:SetPoint("TOPLEFT", sac, "TOPLEFT", x, -y)
     bt:Show()
@@ -365,21 +407,26 @@ local function Disposer()
     -- apres toutes les categories, et seulement si on demande a les voir.
     local masques = groupes.hidden or {}
     groupes.hidden = nil
-    local voirMasques = BagsEnhDB.showHidden and true or false
-    if not voirMasques then
-        for _, item in ipairs(masques) do
+    -- Un objet ecarte (masque, section repliee) sort de l'ecran.
+    local function Ecarter(items)
+        for _, item in ipairs(items) do
             item.bouton:ClearAllPoints()
             item.bouton:SetPoint("TOPLEFT", sac, "TOPLEFT", HORS_ECRAN, 0)
         end
     end
+    local largeur = colonnes * pas - SPACING
+    local voirMasques = BagsEnhDB.showHidden and true or false
+    if not voirMasques then Ecarter(masques) end
 
     local y = TOP_Y
     for _, cat in ipairs(Ordre(groupes)) do
         local items = groupes[cat]
-        EnteteCategorie(TOP_X, y, BagsEnh_CategoryLabel(cat) .. " (" .. #items .. ")", cat)
+        EnteteCategorie(TOP_X, y, BagsEnh_CategoryLabel(cat) .. " (" .. #items .. ")", cat, largeur, true)
         y = y + HEADER_H
         local mode = BagsEnh_GroupingFor(cat)
-        if mode then
+        if Repliee(cat) then
+            Ecarter(items)
+        elseif mode then
             for _, rangee in ipairs(Enchainer(items, mode, colonnes, pas)) do
                 -- Une rangee de continuation (sous-groupe trop long pour une
                 -- ligne) n'a pas de libelle : elle ne paie pas sa bande.
@@ -404,7 +451,7 @@ local function Disposer()
         Bascule(TOP_X, y, voirMasques and ld.BTN_HIDE_HIDDEN or ld.BTN_SHOW_HIDDEN:format(#masques))
         y = y + HEADER_H
         if voirMasques then
-            EnteteCategorie(TOP_X, y, BagsEnh_CategoryLabel("hidden") .. " (" .. #masques .. ")", "hidden")
+            EnteteCategorie(TOP_X, y, BagsEnh_CategoryLabel("hidden") .. " (" .. #masques .. ")", "hidden", largeur, false)
             y = y + HEADER_H
             table.sort(masques, BagsEnh_CmpMaterialFirst)
             y = Grille(masques, y)
@@ -434,12 +481,19 @@ local function Disposer()
             table.insert(speciales[item.sac], item)
         end
     end
-    if #generales > 0 then
-        Texte(TOP_X, y, BagsEnh_L().SECTION_FREE .. " (" .. #generales .. ")", nil, NORMAL_FONT_COLOR:GetRGB())
+    -- Les cases libres se replient aussi — sacs specialises compris : c'est
+    -- souvent le plus gros bloc de la fenetre.
+    if #libres > 0 then
+        EnteteCategorie(TOP_X, y, BagsEnh_L().SECTION_FREE .. " (" .. #generales .. ")", "free", largeur, true)
         y = y + HEADER_H
-        y = Grille(generales, y)
     end
     table.sort(ordreSpeciaux)
+    if Repliee("free") then
+        Ecarter(libres)
+        ordreSpeciaux = {}
+    else
+        y = Grille(generales, y)
+    end
     for _, sacID in ipairs(ordreSpeciaux) do
         local nom = C_Container.GetBagName(sacID) or "?"
         -- Un sac specialise est un sous-niveau des cases libres : gris des
@@ -574,6 +628,13 @@ f:SetScript("OnEvent", function(self, event, arg1)
     elseif event == "BANKFRAME_OPENED" or event == "BANKFRAME_CLOSED" then
         BagsEnh_SetBankOpen(event == "BANKFRAME_OPENED")
     elseif event == "PLAYER_LOGIN" then
+        for _, nom in ipairs(REMPLACANTS) do
+            if C_AddOns.IsAddOnLoaded(nom) then
+                remplacant = nom
+                print("|cff00ccffBagsEnh|r : " .. BagsEnh_L().FOREVER_REPLACED:format(nom))
+                break
+            end
+        end
         local n = 0
         if type(BagsEnhDB) == "table" then for _ in pairs(BagsEnhDB) do n = n + 1 end end
         auLogin = type(BagsEnhDB) .. ", " .. n .. " cles, foreverVue=" ..
