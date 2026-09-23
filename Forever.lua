@@ -333,7 +333,7 @@ local function Disposer()
                 groupes[cat] = groupes[cat] or {}
                 table.insert(groupes[cat], item)
             else
-                table.insert(libres, { bouton = bouton })
+                table.insert(libres, { bouton = bouton, sac = bouton:GetBagID() })
             end
         end
     end
@@ -410,10 +410,39 @@ local function Disposer()
     elseif bascule then
         bascule:Hide()
     end
-    if #libres > 0 then
-        Texte(TOP_X, y, BagsEnh_L().SECTION_FREE .. " (" .. #libres .. ")", nil, 0.6, 0.6, 0.6)
+    -- Cases libres : celles d'un sac SPECIALISE (carquois, giberne, sac
+    -- d'ames...) ne prennent que leur famille d'objets. Les compter avec les
+    -- autres faisait croire a de la place qu'on n'a pas (Kevin, 23/09).
+    -- Famille lue une fois par sac : 0 = sac ordinaire.
+    local familles, generales, speciales, ordreSpeciaux = {}, {}, {}, {}
+    for _, item in ipairs(libres) do
+        local f = familles[item.sac]
+        if f == nil then
+            local _, fam = C_Container.GetContainerNumFreeSlots(item.sac)
+            f = fam or 0
+            familles[item.sac] = f
+        end
+        if f == 0 then
+            table.insert(generales, item)
+        else
+            if not speciales[item.sac] then
+                speciales[item.sac] = {}
+                table.insert(ordreSpeciaux, item.sac)
+            end
+            table.insert(speciales[item.sac], item)
+        end
+    end
+    if #generales > 0 then
+        Texte(TOP_X, y, BagsEnh_L().SECTION_FREE .. " (" .. #generales .. ")", nil, 0.6, 0.6, 0.6)
         y = y + HEADER_H
-        y = Grille(libres, y)
+        y = Grille(generales, y)
+    end
+    table.sort(ordreSpeciaux)
+    for _, sacID in ipairs(ordreSpeciaux) do
+        local nom = C_Container.GetBagName(sacID) or "?"
+        Texte(TOP_X, y, BagsEnh_L().SECTION_FREE_SPECIAL:format(nom, #speciales[sacID]), nil, 0.55, 0.7, 0.85)
+        y = y + HEADER_H
+        y = Grille(speciales[sacID], y)
     end
 
     for i = nbTextes + 1, #textes do textes[i]:Hide() end
