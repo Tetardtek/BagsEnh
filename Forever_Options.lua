@@ -137,6 +137,22 @@ local function Construire()
         function(v) BagsEnhDB.foreverVue = v; BagsEnh_MarkDirty() end)
     Settings.CreateCheckbox(racine, vue, ld.FOREVER_HINT)
 
+    -- Ligne de categorie dans l'infobulle : au choix, parce qu'elle ajoute
+    -- a l'infobulle du jeu (principe de la suite : transparent par defaut).
+    local tip = Settings.RegisterProxySetting(racine, "BAGSENH_TIP", Settings.VarType.String,
+        ld.FOREVER_TIP_SETTING, "shift",
+        function() return BagsEnhDB.tipCategory or "shift" end,
+        function(v) BagsEnhDB.tipCategory = v end)
+    Settings.CreateDropdown(racine, tip, function()
+        local c = Settings.CreateControlTextContainer()
+        c:Add("never", ld.FOREVER_TIP_NEVER)
+        c:Add("shift", ld.FOREVER_TIP_WITH:format(ld.MOD_SHIFT))
+        c:Add("ctrl", ld.FOREVER_TIP_WITH:format(ld.MOD_CTRL))
+        c:Add("alt", ld.FOREVER_TIP_WITH:format(ld.MOD_ALT))
+        c:Add("always", ld.FOREVER_TIP_ALWAYS)
+        return c:GetData()
+    end, ld.FOREVER_TIP_HINT)
+
     -- Vente et depot groupes : meme reglages que 3.3.5 et Era.
     Titre(layout, ld.FOREVER_SECTION_GROUP, ld.FOREVER_HEADER_TIP)
     local mod = Settings.RegisterProxySetting(racine, "BAGSENH_MOD", Settings.VarType.String,

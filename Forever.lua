@@ -576,6 +576,34 @@ function BagsEnh_MarkDirty()
     if BagsEnh_ForeverOptionsRefresh then BagsEnh_ForeverOptionsRefresh() end
 end
 
+-- ── La categorie dans l'infobulle ───────────────────────────────────────
+--
+-- Une ligne « BagsEnh : Consommables / Nourriture » sous l'infobulle d'un
+-- objet DU SAC : pourquoi il est range la, utile pour ecrire une regle.
+-- C'est une ajout a l'infobulle de Blizzard, donc au choix du joueur
+-- (Options > BagsEnh) : jamais, avec une touche, ou toujours. Defaut :
+-- avec Maj, comme MyBags. Crochet officiel : TooltipDataProcessor.
+local function ToucheInfobulle()
+    local m = BagsEnhDB.tipCategory or "shift"
+    if m == "always" then return true end
+    if m == "shift" then return IsShiftKeyDown() end
+    if m == "ctrl" then return IsControlKeyDown() end
+    if m == "alt" then return IsAltKeyDown() end
+    return false
+end
+
+local function LigneInfobulle(tooltip)
+    if tooltip ~= GameTooltip or not VueActive() or not ToucheInfobulle() then return end
+    local owner = tooltip:GetOwner()
+    if not owner or owner:GetParent() ~= sac or not owner.GetBagID then return end
+    local link = C_Container.GetContainerItemLink(owner:GetBagID(), owner:GetID())
+    if not link then return end
+    local cat, _, subCat = BagsEnh_Categorize(link)
+    local texte = BagsEnh_CategoryLabel(cat)
+    if subCat and subCat ~= "" then texte = texte .. " / " .. subCat end
+    tooltip:AddLine(BagsEnh_L().FOREVER_TIP_LINE:format(texte), GRAY_FONT_COLOR:GetRGB())
+end
+
 local f = CreateFrame("Frame")
 f:RegisterEvent("ADDON_LOADED")
 f:RegisterEvent("PLAYER_LOGIN")
@@ -613,6 +641,7 @@ f:SetScript("OnEvent", function(self, event, arg1)
         -- La vue D'ABORD : c'est la fonction de l'addon. Le 23/09, les
         -- panneaux crees avant elle ont interrompu ce gestionnaire, et la
         -- vue ne s'est jamais posee — sans message visible.
+        TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, LigneInfobulle)
         sac:HookScript("OnShow", Replanifier)
         EventRegistry:RegisterCallback("TokenFrame.OnTokenWatchChanged", Replanifier, f)
 
