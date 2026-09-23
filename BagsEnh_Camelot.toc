@@ -16,7 +16,8 @@
 # sur Forever, BagsEnh ne remplace pas le sac du jeu, il le complete.
 # N'y entrent que le moteur de classement (Compat, Locales, Defaults,
 # Utils, Categories), les actions de section (Actions : vendre, deposer)
-# et les deux panneaux qui le reglent (Panel_Categories, Panel_Order). Aucun fichier d'affichage, de banque ou de remplacement
+# et ses reglages aux controles du jeu (Forever_Options — PAS les
+# panneaux Panel_* de 3.3.5 et Era, dessines a la main). Aucun fichier d'affichage, de banque ou de remplacement
 # d'API (Hooks) ne doit y entrer.
 
 Compat.lua
@@ -25,6 +26,5 @@ Defaults.lua
 Utils.lua
 Categories.lua
 Actions.lua
-Panel_Categories.lua
-Panel_Order.lua
+Forever_Options.lua
 Forever.lua

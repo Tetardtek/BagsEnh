@@ -518,37 +518,8 @@ end
 -- charge sur Forever : ici, marquer sale, c'est refaire la vue.
 function BagsEnh_MarkDirty()
     Replanifier()
-end
-
-local categorieRacine   -- rendue par Settings, pour /be options
-
-local function PanneauRacine()
-    local ld = BagsEnh_L()
-    local P = CreateFrame("Frame", "BagsEnhForeverPanel", UIParent)
-    P.name = "BagsEnh"
-
-    local titre = P:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    titre:SetPoint("TOPLEFT", 16, -16)
-    titre:SetText("BagsEnh")
-
-    local case = CreateFrame("CheckButton", nil, P, "UICheckButtonTemplate")
-    case:SetPoint("TOPLEFT", 12, -44)
-    local libelle = P:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    libelle:SetPoint("LEFT", case, "RIGHT", 4, 0)
-    libelle:SetText(ld.FOREVER_VIEW)
-    case:SetScript("OnClick", function(self)
-        BagsEnhDB.foreverVue = self:GetChecked() and true or false
-        Replanifier()
-    end)
-
-    local aide = P:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    aide:SetPoint("TOPLEFT", 16, -84)
-    aide:SetWidth(520)
-    aide:SetJustifyH("LEFT")
-    aide:SetText(ld.FOREVER_HINT)
-
-    P:SetScript("OnShow", function() case:SetChecked(VueActive() and true or false) end)
-    categorieRacine = BagsEnh_AddOptionsCategory(P)
+    -- Les listes des reglages (categories, regles, ordre) suivent aussi.
+    if BagsEnh_ForeverOptionsRefresh then BagsEnh_ForeverOptionsRefresh() end
 end
 
 local f = CreateFrame("Frame")
@@ -591,14 +562,12 @@ f:SetScript("OnEvent", function(self, event, arg1)
         sac:HookScript("OnShow", Replanifier)
         EventRegistry:RegisterCallback("TokenFrame.OnTokenWatchChanged", Replanifier, f)
 
-        -- Puis les reglages, chacun isole : un panneau qui echoue coute ce
-        -- panneau, jamais la vue. L'erreur est gardee pour /be sonde — le
-        -- client refuse /run tant que les scripts ne sont pas autorises.
-        -- La racine d'abord : les deux autres s'y rattachent par son nom.
-        for _, creer in ipairs({ PanneauRacine, BagsEnh_CreateCategoriesPanel, BagsEnh_CreateOrderPanel }) do
-            local ok, err = pcall(creer)
-            if not ok then table.insert(erreurs, tostring(err)) end
-        end
+        -- Puis les reglages (Forever_Options.lua), isoles : s'ils echouent,
+        -- on perd les reglages, jamais la vue. L'erreur est gardee pour
+        -- /be sonde — le client refuse /run tant que les scripts ne sont
+        -- pas autorises.
+        local ok, err = pcall(BagsEnh_ForeverOptionsBuild)
+        if not ok then table.insert(erreurs, tostring(err)) end
 
     elseif event == "MERCHANT_SHOW" or event == "MERCHANT_CLOSED" then
         BagsEnh_SetMerchantOpen(event == "MERCHANT_SHOW")
@@ -641,9 +610,7 @@ SlashCmdList["BAGSENH"] = function(msg)
             print("|cff00ccffBagsEnh|r : vue par categories |cffff5555desactivee|r — referme et rouvre ton sac.")
         end
     elseif msg == "options" then
-        if categorieRacine and Settings and Settings.OpenToCategory then
-            Settings.OpenToCategory(categorieRacine:GetID())
-        end
+        BagsEnh_ForeverOptionsOpen()
     elseif msg == "objets" then
         -- Classe et sous-classe telles que le client les declare, et la
         -- categorie qui en sort. Un objet par nom (piles regroupees).

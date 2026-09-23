@@ -48,8 +48,7 @@ function BagsEnh_CreateCategoriesPanel()
     hint:SetPoint("TOPLEFT", 16, -40)
     hint:SetWidth(400)
     hint:SetJustifyH("LEFT")
-    -- Sur Forever, pas de badge + : le sac est celui du jeu (voir Forever.lua).
-    hint:SetText(BagsEnh_FOREVER and ld.CAT_PANEL_HINT_FOREVER or ld.CAT_PANEL_HINT)
+    hint:SetText(ld.CAT_PANEL_HINT)
 
     -- ============================================================
     -- Section 1 — your categories
@@ -125,7 +124,7 @@ function BagsEnh_CreateCategoriesPanel()
             userChild.empty:SetPoint("TOPLEFT", 4, -4)
             userChild.empty:SetWidth(340)
             userChild.empty:SetJustifyH("LEFT")
-            userChild.empty:SetText(BagsEnh_FOREVER and ld.CAT_NONE_YET_FOREVER or ld.CAT_NONE_YET)
+            userChild.empty:SetText(ld.CAT_NONE_YET)
             userChild.empty:Show()
         elseif userChild.empty then
             userChild.empty:Hide()
