@@ -279,7 +279,7 @@ end
 local entetesCat = {}
 local nbEntetesCat = 0
 
-local function EnteteCategorie(x, y, texte, cat, r, g, b)
+local function EnteteCategorie(x, y, texte, cat)
     nbEntetesCat = nbEntetesCat + 1
     local bt = entetesCat[nbEntetesCat]
     if not bt then
@@ -300,7 +300,11 @@ local function EnteteCategorie(x, y, texte, cat, r, g, b)
     bt.cat = cat
     bt:SetText(texte)
     local fs = bt:GetFontString()
-    fs:SetTextColor(r or 1, g or 1, b or 1)
+    -- L'or des titres de section du jeu (NORMAL_FONT_COLOR), pas une couleur
+    -- par categorie : la vue doit se lire comme une fenetre de Blizzard
+    -- (principe de la suite Enh, Kevin 23/09). Remis a chaque passe, le
+    -- bouton venant d'un pool.
+    fs:SetTextColor(NORMAL_FONT_COLOR:GetRGB())
     fs:ClearAllPoints()
     fs:SetPoint("LEFT")
     bt:SetSize(fs:GetStringWidth() + 4, HEADER_H)
@@ -372,8 +376,7 @@ local function Disposer()
     local y = TOP_Y
     for _, cat in ipairs(Ordre(groupes)) do
         local items = groupes[cat]
-        local r, g, b = BagsEnh_CategoryColor(cat)
-        EnteteCategorie(TOP_X, y, BagsEnh_CategoryLabel(cat) .. " (" .. #items .. ")", cat, r, g, b)
+        EnteteCategorie(TOP_X, y, BagsEnh_CategoryLabel(cat) .. " (" .. #items .. ")", cat)
         y = y + HEADER_H
         local mode = BagsEnh_GroupingFor(cat)
         if mode then
@@ -401,8 +404,7 @@ local function Disposer()
         Bascule(TOP_X, y, voirMasques and ld.BTN_HIDE_HIDDEN or ld.BTN_SHOW_HIDDEN:format(#masques))
         y = y + HEADER_H
         if voirMasques then
-            local r, g, b = BagsEnh_CategoryColor("hidden")
-            EnteteCategorie(TOP_X, y, BagsEnh_CategoryLabel("hidden") .. " (" .. #masques .. ")", "hidden", r, g, b)
+            EnteteCategorie(TOP_X, y, BagsEnh_CategoryLabel("hidden") .. " (" .. #masques .. ")", "hidden")
             y = y + HEADER_H
             table.sort(masques, BagsEnh_CmpMaterialFirst)
             y = Grille(masques, y)
@@ -433,14 +435,16 @@ local function Disposer()
         end
     end
     if #generales > 0 then
-        Texte(TOP_X, y, BagsEnh_L().SECTION_FREE .. " (" .. #generales .. ")", nil, 0.6, 0.6, 0.6)
+        Texte(TOP_X, y, BagsEnh_L().SECTION_FREE .. " (" .. #generales .. ")", nil, NORMAL_FONT_COLOR:GetRGB())
         y = y + HEADER_H
         y = Grille(generales, y)
     end
     table.sort(ordreSpeciaux)
     for _, sacID in ipairs(ordreSpeciaux) do
         local nom = C_Container.GetBagName(sacID) or "?"
-        Texte(TOP_X, y, BagsEnh_L().SECTION_FREE_SPECIAL:format(nom, #speciales[sacID]), nil, 0.55, 0.7, 0.85)
+        -- Un sac specialise est un sous-niveau des cases libres : gris des
+        -- sous-titres, comme les materiaux et emplacements.
+        Texte(TOP_X, y, BagsEnh_L().SECTION_FREE_SPECIAL:format(nom, #speciales[sacID]), nil, GRAY_FONT_COLOR:GetRGB())
         y = y + HEADER_H
         y = Grille(speciales[sacID], y)
     end
