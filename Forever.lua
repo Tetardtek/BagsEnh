@@ -474,6 +474,11 @@ SlashCmdList["BAGSENH"] = function(msg)
         BagsEnhDB.foreverVue = not VueActive()
         if BagsEnhDB.foreverVue then
             print("|cff00ccffBagsEnh|r : vue par categories |cff00ff00activee|r.")
+            -- La greffe vit sur le sac UNIQUE : en sacs separes, elle n'a rien
+            -- a reorganiser. On le dit plutot que de laisser croire a une panne.
+            if GetCVar("combinedBags") ~= "1" then
+                print("|cff00ccffBagsEnh|r : " .. BagsEnh_L().FOREVER_NEED_COMBINED)
+            end
             Replanifier()
         else
             -- Retablir la grille native demanderait d'appeler
