@@ -1,0 +1,26 @@
+## Interface: 11601
+## Title: BagsEnh
+## Version: 2.9.0-dev
+## Notes: Categorized view grafted onto the game's own bag. Enh series.
+## SavedVariables: BagsEnhDB
+
+# .toc SUFFIXE — lu par WoW Forever (nom de code "camelot"), ignore
+# par Classic Era et par le client 3.3.5.
+#
+# Le suffixe n'est pas documente : il vient du binaire WowB.exe, ou les
+# chaines "Camelot" et "Mainline" se suivent, comme une liste de
+# suffixes par ordre de recherche. Hypothese a confirmer en jeu : si
+# "/be vue" repond sur Forever, c'est ce fichier qui a ete lu.
+#
+# Cette liste N'EST PAS celle des deux autres .toc, et c'est voulu :
+# sur Forever, BagsEnh ne remplace pas le sac du jeu, il le complete.
+# Seul le moteur de classement y entre (Compat, Locales, Defaults, Utils,
+# Categories). Aucun fichier d'affichage, de banque ou de remplacement
+# d'API (Hooks) ne doit y entrer.
+
+Compat.lua
+Locales.lua
+Defaults.lua
+Utils.lua
+Categories.lua
+Forever.lua

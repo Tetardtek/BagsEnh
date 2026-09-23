@@ -1,5 +1,9 @@
 local defaults = {
-    lang = "enUS",
+    -- Pas de « lang » ici : nil veut dire « langue du client » (BagsEnh_L).
+    -- Le défaut "enUS" posé depuis la v0.1 était réécrit à CHAQUE chargement
+    -- par InitializeDB (qui remplit tout champ nil) : le choix « Auto » du
+    -- sélecteur ne survivait pas à un /reload, et une installation neuve
+    -- était en anglais quel que soit le client.
     enabled = true,      -- unified view replaces default bags
     scale = 1.0,
     columns = 7,          -- items per row inside a section

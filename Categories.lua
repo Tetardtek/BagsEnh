@@ -5,6 +5,12 @@
 -- realms will move it around.
 -- ============================================================
 
+-- WoW Forever n'a plus de GetItemInfo global (releve en jeu le 23/09) :
+-- seul C_Item.GetItemInfo existe, meme signature. Alias LOCAL a ce fichier,
+-- jamais ecrit dans _G — une cle Blizzard posee par un addon est lue par le
+-- code du jeu et le marque. Sur 3.3.5 et Era, le global existe et gagne.
+local GetItemInfo = GetItemInfo or (C_Item and C_Item.GetItemInfo)
+
 -- ============================================================
 -- Trade Goods subtype order/maps (defined first — used by CategoryLabel,
 -- Categorize and the grouping engine below). Curated display order expressed
