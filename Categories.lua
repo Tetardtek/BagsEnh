@@ -64,6 +64,7 @@ BagsEnh_CATEGORY_ORDER = {
     "raidmats",
     "equipment",
     "consumables",
+    "projectiles",  -- fleches et balles (classe 6), hors consommables depuis le 23/09
     "gems",
     "profession",
     "recipes",
@@ -84,6 +85,7 @@ BagsEnh_CATEGORY_LABELS = {
     raidmats = "CAT_RAIDMATS",
     equipment = "CAT_EQUIPMENT",
     consumables = "CAT_CONSUMABLES",
+    projectiles = "CAT_PROJECTILES",
     gems = "CAT_GEMS",
     profession = "CAT_PROFESSION",
     quest = "CAT_QUEST",
@@ -186,6 +188,7 @@ BagsEnh_CATEGORY_COLORS = {
     raidmats    = {0.30, 0.80, 0.75},
     equipment   = {0.45, 0.62, 1.00},
     consumables = {0.30, 0.82, 0.45},
+    projectiles = {0.90, 0.42, 0.38},
     gems        = {1.00, 0.45, 0.72},
     profession  = {0.82, 0.62, 0.35},
     quest       = {1.00, 0.85, 0.12},
@@ -263,7 +266,7 @@ local CLASS_ID_TO_CATEGORY = {
     [2]  = "equipment",     -- Weapon
     [3]  = "gems",          -- Gem
     [4]  = "equipment",     -- Armor
-    [6]  = "consumables",   -- Projectile
+    [6]  = "projectiles",   -- Projectile — une fleche se tire, elle ne se consomme pas (Kevin, 23/09)
     [7]  = "profession",    -- Trade Goods
     [9]  = "recipes",       -- Recipe
     [11] = "equipment",     -- Quiver
@@ -286,7 +289,7 @@ local function BuildTypeMap()
         [armor or ""] = "equipment",
         [consumable or ""] = "consumables",
         [tradegoods or ""] = "profession",
-        [projectile or ""] = "consumables",
+        [projectile or ""] = "projectiles",
         [quiver or ""] = "equipment",
         [gem or ""] = "gems",
         [quest or ""] = "quest",
@@ -411,6 +414,7 @@ end
 -- classement.
 local SUBGROUPED = {
     consumables = true,   -- Potion / Élixir / Flacon / Parchemin / Nourriture / Bandage
+    projectiles = true,   -- Flèche / Balle
     misc = true,          -- Camelote / Composant / Familier / Monture / Fête / Autre
     gems = true,          -- Rouge / Bleue / Jaune / Méta…
     recipes = true,       -- Alchimie / Couture / Forge / Ingénierie…

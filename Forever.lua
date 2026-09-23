@@ -249,17 +249,21 @@ local function Disposer()
 
     local groupes, libres, taille = {}, {}, nil
     for _, bouton in sac:EnumerateValidItems() do
-        taille = taille or bouton:GetWidth()
-        if not accroches[bouton] then
-            bouton:HookScript("OnClick", SurClic)
-            accroches[bouton] = true
-        end
-        local cat, item = Lire(bouton)
-        if cat then
-            groupes[cat] = groupes[cat] or {}
-            table.insert(groupes[cat], item)
-        else
-            table.insert(libres, { bouton = bouton })
+        -- L'iterateur du jeu ne s'arrete pas sur un bouton nil : il en rend
+        -- tant que la fenetre n'a pas cree ses boutons (mesure le 23/09).
+        if bouton then
+            taille = taille or bouton:GetWidth()
+            if not accroches[bouton] then
+                bouton:HookScript("OnClick", SurClic)
+                accroches[bouton] = true
+            end
+            local cat, item = Lire(bouton)
+            if cat then
+                groupes[cat] = groupes[cat] or {}
+                table.insert(groupes[cat], item)
+            else
+                table.insert(libres, { bouton = bouton })
+            end
         end
     end
     if not taille then return end
@@ -480,6 +484,24 @@ SlashCmdList["BAGSENH"] = function(msg)
     elseif msg == "options" then
         if categorieRacine and Settings and Settings.OpenToCategory then
             Settings.OpenToCategory(categorieRacine:GetID())
+        end
+    elseif msg == "objets" then
+        -- Classe et sous-classe telles que le client les declare, et la
+        -- categorie qui en sort. Un objet par nom (piles regroupees).
+        -- Parcourt les SACS, pas la fenetre : tant qu'elle n'a pas ete
+        -- ouverte, ses boutons n'existent pas.
+        local vus = {}
+        print("|cff00ccffBagsEnh|r objets du sac : nom | classe.sous-classe | categorie")
+        for sacID = 0, Constants.InventoryConstants.NumBagSlots do
+            for case = 1, C_Container.GetContainerNumSlots(sacID) do
+                local info = C_Container.GetContainerItemInfo(sacID, case)
+                if info and not vus[info.itemID] then
+                    vus[info.itemID] = true
+                    local _, _, _, _, _, classe, sousClasse = C_Item.GetItemInfoInstant(info.itemID)
+                    print(("  %s | %s.%s | %s"):format(info.hyperlink, tostring(classe),
+                        tostring(sousClasse), tostring((BagsEnh_Categorize(info.hyperlink)))))
+                end
+            end
         end
     elseif msg == "sonde" then
         Sonde()
