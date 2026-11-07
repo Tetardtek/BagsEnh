@@ -1,4 +1,4 @@
-## Interface: 11601
+## Interface: 16001
 ## Title: BagsEnh
 ## Version: 2.9.0-dev
 ## Notes: Categorized view grafted onto the game's own bag. Enh series.
