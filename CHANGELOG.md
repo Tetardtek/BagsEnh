@@ -5,6 +5,48 @@ All notable changes to BagsEnh are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0-beta.1] - 2026-11-18
+
+First build for **WoW Forever** (interface 16001). A pre-release: the Forever
+view is new, and the 3.3.5 and Classic Era builds are unchanged in purpose but
+share some of the code touched here.
+
+### Added — WoW Forever
+
+- **A categorized view inside the game's own bag.** On Forever, BagsEnh does not
+  replace the bag window: it lays out the game's item buttons by category, under
+  its own headers. Nothing moves in your bags. Requires the combined bag
+  (one-bag mode); the view says so if it is off. `/be vue` toggles it.
+- **Sub-groups chained on a row** (potions, cloth, armor slots…), each under a
+  small grey label.
+- **Sell or deposit a whole section**: Ctrl + click a category header, or a
+  sub-group label, with a vendor open (sell) or the bank open (deposit). The
+  selling limits (quality, item level) apply.
+- **Move an item to another category, or hide it**: Ctrl (or Alt) + right-click.
+- **Collapsible sections**: click a header. Free slots too; slots of
+  specialised bags (quiver, soul bag…) are counted apart.
+- **Category line in the item tooltip**, shown with a modifier of your choice.
+- **Settings with the game's own controls**: `/be options` — view, bulk selling,
+  custom categories and rules, section order.
+- **Steps aside** when another bag addon (Baganator, Bagnon, BetterBags…) has
+  taken over the bag.
+- `/be sonde` and `/be objets` for diagnostics.
+
+### Added — all clients
+
+- **Projectiles category.** Arrows and bullets leave Consumables.
+
+### Fixed — all clients
+
+- The **"Auto" language setting did not survive a reload**: a default wrote
+  `enUS` back at every load.
+
+### Not tested yet
+
+- Using an item **in combat** from the Forever view.
+- **Depositing** a section at the bank on Forever.
+- This build has not been run in game on Classic Era or 3.3.5.
+
 ## [2.7.0] - 2026-08-03
 
 ### Added
