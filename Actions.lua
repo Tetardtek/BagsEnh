@@ -71,16 +71,29 @@ end
 -- Slots de la catégorie dans `containers` (snapshot avant de bouger). `desc`
 -- optionnel restreint à une SOUS-section : desc.sub (matériau) et/ou
 -- desc.slot (emplacement). Par défaut les sacs du personnage.
+--
+-- desc.only : ensemble de cases « sac:case ». La vue Forever y met
+-- exactement les cases qu'elle MONTRE sous le libellé cliqué : ses
+-- sous-groupes ne se déduisent pas de desc.sub (un objet rangé à la main y
+-- reçoit son sous-type par un repli que Categorize ne connaît pas, et le mode
+-- « emplacement » y affiche un libellé traduit). Une vente ne se rattrape
+-- pas : ce qui part doit être ce qu'on voit. La catégorie reste vérifiée.
 local function SectionSlots(catKey, desc, containers)
     local out = {}
+    local only = desc and desc.only
     for _, bag in ipairs(containers or BAGS) do
         for slot = 1, BagsEnh_GetContainerNumSlots(bag) or 0 do
             local _, _, locked, _, _, _, link = BagsEnh_GetContainerItemInfo(bag, slot)
             if link and not locked then
                 local cat, _, subCat, equipLoc = BagsEnh_Categorize(link)
-                if cat == catKey
-                        and (not desc or not desc.sub or (subCat or "?") == desc.sub)
-                        and (not desc or not desc.slot or equipLoc == desc.slot) then
+                local dedans
+                if only then
+                    dedans = only[bag .. ":" .. slot] == true
+                else
+                    dedans = (not desc or not desc.sub or (subCat or "?") == desc.sub)
+                        and (not desc or not desc.slot or equipLoc == desc.slot)
+                end
+                if cat == catKey and dedans then
                     out[#out + 1] = { bag = bag, slot = slot, link = link }
                 end
             end

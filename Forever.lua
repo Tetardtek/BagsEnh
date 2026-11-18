@@ -183,7 +183,10 @@ local function Enchainer(items, mode, colonnes, pas)
 
         local debut, rangeeDebut = col, #rangees
         besoin = math.min(besoin, colonnes - debut)
-        table.insert(rangees[rangeeDebut].etiquettes, { col = debut, texte = texte, largeur = besoin })
+        -- items : le sous-groupe ENTIER, meme s'il deborde sur les rangees
+        -- suivantes — c'est ce que son libelle vend ou depose.
+        table.insert(rangees[rangeeDebut].etiquettes,
+            { col = debut, texte = texte, largeur = besoin, items = g.items })
         for _, item in ipairs(g.items) do
             if col >= colonnes then Suivante() end
             table.insert(rangees[#rangees].poses, { item = item, col = col })
@@ -355,9 +358,60 @@ local function EnteteCategorie(x, y, texte, cat, largeur, repliable)
     bt:Show()
 end
 
+-- ── Libelles de sous-groupe : vendre ou deposer le sous-groupe ─────────
+--
+-- Meme geste que sur l'en-tete (Ctrl + clic), restreint aux objets poses
+-- sous ce libelle. Sur 3.3.5 et Era, les sous-en-tetes le font deja
+-- (Frames.lua, beAct.desc) ; ici le libelle n'etait qu'un texte.
+--
+-- On passe au moteur les CASES affichees (desc.only), relues sur les boutons
+-- du jeu au moment du clic — voir SectionSlots dans Actions.lua.
+local etiquettes = {}
+local nbEtiquettes = 0
+
+local function EtiquetteSousGroupe(x, y, texte, largeur, cat, items)
+    nbEtiquettes = nbEtiquettes + 1
+    local bt = etiquettes[nbEtiquettes]
+    if not bt then
+        bt = CreateFrame("Button", nil, calque)
+        bt:SetNormalFontObject("GameFontNormalSmall")
+        bt:SetScript("OnClick", function(self)
+            if not BagsEnh_ActionModifierDown() then return end
+            local only = {}
+            for _, item in ipairs(self.items) do
+                only[item.bouton:GetBagID() .. ":" .. item.bouton:GetID()] = true
+            end
+            BagsEnh_SectionAction(self.cat, { only = only })
+        end)
+        bt:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            -- Le libelle entier : il est coupe a la largeur de son sous-groupe.
+            GameTooltip:SetText(self:GetText())
+            GameTooltip:AddLine(BagsEnh_L().FOREVER_HEADER_TIP, 1, 1, 1, true)
+            GameTooltip:Show()
+        end)
+        bt:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        etiquettes[nbEtiquettes] = bt
+    end
+    bt.cat = cat
+    bt.items = items
+    bt:SetText(texte)
+    local fs = bt:GetFontString()
+    fs:SetJustifyH("LEFT")
+    fs:SetWordWrap(false)
+    fs:ClearAllPoints()
+    fs:SetPoint("LEFT")
+    fs:SetWidth(largeur)
+    bt:SetSize(largeur, SUBHEADER_H)
+    bt:ClearAllPoints()
+    bt:SetPoint("TOPLEFT", sac, "TOPLEFT", x, -y)
+    bt:Show()
+end
+
 local function Disposer()
     nbTextes = 0
     nbEntetesCat = 0
+    nbEtiquettes = 0
     if not VueActive() then
         calque:Hide()
         hauteur = nil
@@ -432,7 +486,7 @@ local function Disposer()
                 -- ligne) n'a pas de libelle : elle ne paie pas sa bande.
                 if #rangee.etiquettes > 0 then
                     for _, e in ipairs(rangee.etiquettes) do
-                        Texte(TOP_X + e.col * pas, y, e.texte, e.largeur * pas - 4)
+                        EtiquetteSousGroupe(TOP_X + e.col * pas, y, e.texte, e.largeur * pas - 4, cat, e.items)
                     end
                     y = y + SUBHEADER_H
                 end
@@ -505,6 +559,7 @@ local function Disposer()
 
     for i = nbTextes + 1, #textes do textes[i]:Hide() end
     for i = nbEntetesCat + 1, #entetesCat do entetesCat[i]:Hide() end
+    for i = nbEtiquettes + 1, #etiquettes do etiquettes[i]:Hide() end
     calque:Show()
 
     -- Meme calcul que CalculateHeight du jeu, avec nos en-tetes en plus.
